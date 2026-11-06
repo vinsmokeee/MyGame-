@@ -423,7 +423,7 @@
       await window.LuckyChat.send(`Requested ${fmtNu(amount)}`);
       $('rechargeDialog').close();
       window.LuckyChat.open();
-      setMessage(`Recharge request for ${fmtNu(amount)} sent to the owner.`, 'win');
+      setMessage(`Requested ${fmtNu(amount)}. The team will add it soon.`, 'win');
     } catch (_) {
       $('rechargeMsg').textContent = 'Could not send the request. Check your connection and try again.';
     }
