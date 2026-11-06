@@ -58,7 +58,7 @@ window.CoinCodes = (() => {
 
   // ----- admin side -----
   function parseAdminKey(token) {
-    const t = String(token || '').trim();
+    const t = String(token || '').replace(/\s+/g, ''); // ignore spaces/line breaks from copy-paste
     if (!t.startsWith('LSKEY.')) throw new Error('That is not an admin key.');
     let k;
     try { k = JSON.parse(new TextDecoder().decode(fromB64url(t.slice(6)))); } catch (_) { k = null; }
