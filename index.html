@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucky Spin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <h1>Lucky Spin</h1>
+    <div class="stats">
+      <div class="stat"><span class="label">Coins</span><span id="coins" class="value">0</span></div>
+      <div class="stat"><span class="label">Best</span><span id="best" class="value">0</span></div>
+      <div class="stat"><span class="label">Spins</span><span id="spins" class="value">0</span></div>
+    </div>
+  </header>
+
+  <section class="stage">
+    <div class="wheel-wrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <canvas id="wheel" width="600" height="600" aria-label="Prize wheel"></canvas>
+      <button id="spin" class="hub" type="button">SPIN</button>
+    </div>
+    <p id="message" class="message" role="status" aria-live="polite">Each spin costs 10 coins. Good luck!</p>
+    <div class="controls">
+      <label class="bet">
+        Bet
+        <select id="bet">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </label>
+      <button id="reset" class="secondary" type="button">New game</button>
+      <button id="sound" class="secondary" type="button" aria-pressed="true">Sound: on</button>
+    </div>
+  </section>
+
+  <section class="side">
+    <h2>Prizes</h2>
+    <ul id="legend" class="legend"></ul>
+    <h2>History</h2>
+    <ol id="history" class="history"></ol>
+  </section>
+</main>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<script src="game.js"></script>
+</body>
+</html>
