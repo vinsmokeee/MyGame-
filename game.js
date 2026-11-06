@@ -415,7 +415,7 @@
     e.preventDefault();
     const amount = Number($('rechargeAmount').value);
     if (!Number.isInteger(amount) || amount < MIN_RECHARGE) {
-      $('rechargeMsg').textContent = `The minimum recharge is ${fmtNu(MIN_RECHARGE)}.`;
+      $('rechargeMsg').textContent = `Minimum recharge is ${fmtNu(MIN_RECHARGE)}.`;
       return;
     }
     if (!window.LuckyChat) { $('rechargeDialog').close(); chatUnavailable(); return; }
@@ -469,7 +469,7 @@
   // ---------- other events ----------
   spinBtn.addEventListener('click', spin);
   betSel.addEventListener('change', () => {
-    setMessage(`Each spin costs ${fmtNu(betSel.value)}.`);
+    setMessage('You can bet Nu 20, 50, 100.');
     buildLegend();
     drawWheel();
     render();

@@ -32,7 +32,7 @@
       <canvas id="wheel" width="600" height="600" aria-label="Prize wheel"></canvas>
       <button id="spin" class="hub" type="button">SPIN</button>
     </div>
-    <p id="message" class="message" role="status" aria-live="polite">Pick a bet and spin. Good luck!</p>
+    <p id="message" class="message" role="status" aria-live="polite">You can bet Nu 20, 50, 100.</p>
     <div class="controls">
       <label class="bet">
         Bet
@@ -117,7 +117,8 @@
 <dialog id="rechargeDialog" class="dialog">
   <form method="dialog" id="rechargeForm" novalidate>
     <h2>Recharge Nu</h2>
-    <p class="hint">Send a recharge request to the owner. The minimum recharge is <strong>Nu 100</strong>. The Nu are added to your balance once the owner approves it.</p>
+    <p class="hint">Send a recharge request to our team. The Nu are added to your balance once it is approved.</p>
+    <p class="recharge-note">Minimum recharge is Nu 100.</p>
     <label class="field">Amount (Nu)
       <input id="rechargeAmount" type="number" inputmode="numeric" min="100" step="1" value="100">
     </label>
