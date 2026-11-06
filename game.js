@@ -420,7 +420,12 @@
     }
     if (!window.LuckyChat) { $('rechargeDialog').close(); chatUnavailable(); return; }
     try {
-      await window.LuckyChat.send(`Requested ${fmtNu(amount)}`);
+      const when = new Date().toLocaleString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+      });
+      await window.LuckyChat.send(
+        `Requested ${fmtNu(amount)}\nName: ${state.name}\nID: ${state.playerId}\nDate & time: ${when}`,
+      );
       $('rechargeDialog').close();
       window.LuckyChat.open();
       setMessage(`Requested ${fmtNu(amount)}. The team will add it soon.`, 'win');
