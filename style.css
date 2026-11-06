@@ -158,9 +158,8 @@ a.link { color: var(--accent); }
 .welcome h2 { font-size: 1.4rem; color: var(--accent); }
 .welcome-id { background: var(--bg); border: 1px dashed var(--accent); border-radius: 12px; padding: 10px; margin: 6px 0 14px; color: var(--muted); font-size: .85rem; }
 .welcome-id strong { display: block; color: var(--accent); font-size: 2rem; letter-spacing: .12em; font-family: ui-monospace, Menlo, monospace; }
-.welcome-list { text-align: left; margin: 0 0 12px; padding-left: 1.4em; line-height: 1.5; }
+.welcome-list { text-align: left; margin: 0 0 14px; padding-left: 1.4em; line-height: 1.5; }
 .welcome-list li { margin-bottom: 6px; }
-.welcome-note { color: var(--muted); font-size: .8rem; margin: 0 0 10px; }
 .welcome-bye { font-weight: 800; font-size: 1.1rem; color: var(--accent); margin: 0 0 4px; }
 .welcome .row.end { justify-content: center; }
 
