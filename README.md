@@ -5,10 +5,11 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 
 ## How to play
 - Players start with Nu 200, pick a bet (Nu 20/50/100) and press **SPIN** (or Space).
-- About 1 spin in 3 wins (×1.5, ×2, ×3, ×5) and 1 in 10 gives the bet back; over time players get back a bit
-  less than they bet. Two big prizes pay in full at a Nu 100 bet, with a smaller share at lower bets:
-  **Mega Nu 10,000** (about 1 in 650 spins) and the **Jackpot Nu 50,000** (about 1 in 7,000 spins).
-  Tune `SEGMENTS` / `oneIn` in `game.js`.
+- LOSE 54% of spins; a win about 1 spin in 4 (×1.5, ×2, ×3, ×5) plus "bet back" and "half back" spins. Three big
+  prizes pay in full at a Nu 100 bet (smaller share at lower bets): **Nu 1,000** (1 in 200), **Nu 10,000** (1 in 2,500)
+  and the **Jackpot Nu 50,000** (1 in 20,000); ×5 is 1 in 30. Over time players get back about 88% of Nu 50/100 bets.
+  Tune `p` in `SEGMENTS` in `game.js`.
+- New players enter their name and gender, then see a welcome pop-up with their ID.
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 50** bonus.
 - Players can set their own name (✏️ Edit name).

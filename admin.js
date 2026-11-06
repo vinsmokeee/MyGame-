@@ -120,7 +120,7 @@ async function start() {
       li.querySelector('.idtag').textContent = `ID ${p.playerId || '?'}`;
       li.querySelector('.nm').textContent = p.name || 'Unnamed';
       li.querySelector('.meta').textContent = fmtTime(p.updatedAt);
-      li.querySelector('.sub').textContent = `Balance ${fmtNu(p.nu || 0)} · ${p.spins || 0} spins`;
+      li.querySelector('.sub').textContent = [p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${p.spins || 0} spins`].filter(Boolean).join(' · ');
       ul.append(li);
     }
   }
@@ -187,7 +187,7 @@ async function start() {
     const who = playerLabel(current, c);
     const p = players.get(current);
     $('threadName').textContent = who.name;
-    $('threadMeta').textContent = `ID ${who.id || '?'}` + (p ? ` · ${fmtNu(p.nu || 0)}` : '');
+    $('threadMeta').textContent = [`ID ${who.id || '?'}`, p && p.gender, p && fmtNu(p.nu || 0)].filter(Boolean).join(' · ');
   }
 
   function openThread(uid) {
