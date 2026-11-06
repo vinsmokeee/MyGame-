@@ -38,8 +38,8 @@
   for (const x of SEGMENTS) x.weight = x.p;
   // Big prize for a bet: full at Nu 100; at Nu 50 a quarter, at Nu 20 one twenty-fifth.
   const bigPrize = (seg, bet) => Math.round(seg.full * Math.min(1, bet / MAX_BET) ** 2);
-  const shortNu = (n) => (n >= 1000 ? `${+(n / 1000).toFixed(1)}K` : String(n));
-  const segLabel = (seg) => ((seg.mega || seg.big) ? `NU ${shortNu(bigPrize(seg, Number(betSel.value)))}` : seg.label);
+  // Big slices show the actual amount for the chosen bet, e.g. "NU 400" at Nu 20, "NU 10,000" at Nu 100.
+  const segLabel = (seg) => ((seg.mega || seg.big) ? `NU ${bigPrize(seg, Number(betSel.value)).toLocaleString('en-US')}` : seg.label);
   const N = SEGMENTS.length;
   const ARC = (Math.PI * 2) / N;
   const TOTAL_WEIGHT = SEGMENTS.reduce((s, x) => s + x.weight, 0);
@@ -209,7 +209,7 @@
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
-    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Nu 10,000 prize' : seg.big ? 'Nu 1,000 prize' : seg.label, net);
+    addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : seg.label, net);
     spinning = false;
 
     let text;
@@ -284,6 +284,7 @@
     }
   }
 
+  // Prize list under the wheel. Big prizes show the amount for the chosen bet and update when it changes.
   function buildLegend() {
     const bet = Number(betSel.value);
     const seen = new Map();
@@ -298,9 +299,8 @@
       sw.style.background = seg.mega ? '#b91c1c' : seg.color;
       const name = document.createElement('span');
       if (seg.full) {
-        const title = seg.jackpot ? 'Jackpot' : `${fmtNu(seg.full)} prize`;
-        name.textContent = bet >= MAX_BET ? (seg.jackpot ? `Jackpot: ${fmtNu(seg.full)}` : title)
-          : `${title}: ${fmtNu(bigPrize(seg, bet))} at this bet`;
+        name.textContent = (seg.jackpot ? 'Jackpot: ' : '') + fmtNu(bigPrize(seg, bet));
+        if (seg.jackpot) name.className = 'legend-big';
       } else {
         name.textContent = seg.mult === 0 ? 'Lose bet' : seg.mult === 1 ? 'Bet back (×1)'
           : seg.mult === 0.5 ? 'Half back (×0.5)' : `×${seg.mult} bet`;
@@ -308,12 +308,6 @@
       li.append(sw, name);
       legend.append(li);
     });
-    if (bet < MAX_BET) {
-      const li = document.createElement('li');
-      li.className = 'legend-note';
-      li.textContent = `Bet ${fmtNu(MAX_BET)} to win the full Nu 1,000, Nu 10,000 and Nu 50,000 Jackpot prizes.`;
-      legend.append(li);
-    }
   }
 
   // ---------- sound ----------
@@ -404,6 +398,12 @@
     setMenu(false);
     if (action === 'contact') {
       if (window.LuckyChat) window.LuckyChat.open(); else chatUnavailable();
+    } else if (action === 'note') {
+      // Same content as the welcome pop-up and prize note, any time from the menu.
+      $('noteId').textContent = state.playerId;
+      $('noteWelcomeList').innerHTML = $('welcomeList').innerHTML;
+      fillPrizeLines($('notePrizeList'));
+      $('noteDialog').showModal();
     } else if (action === 'recharge') {
       $('rechargeMsg').textContent = '';
       $('rechargeDialog').showModal();
@@ -420,7 +420,12 @@
     }
     if (!window.LuckyChat) { $('rechargeDialog').close(); chatUnavailable(); return; }
     try {
-      await window.LuckyChat.send(`Requested ${fmtNu(amount)}`);
+      const when = new Date().toLocaleString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+      });
+      await window.LuckyChat.send(
+        `Requested ${fmtNu(amount)}\nName: ${state.name}\nID: ${state.playerId}\nDate & time: ${when}`,
+      );
       $('rechargeDialog').close();
       window.LuckyChat.open();
       setMessage(`Requested ${fmtNu(amount)}. The team will add it soon.`, 'win');
@@ -430,6 +435,29 @@
   });
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
+  // Prize note: what the three big slices pay at each bet (same formula the wheel uses).
+  function fillPrizeLines(list) {
+    list.replaceChildren();
+    const bigs = SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full);
+    for (const opt of betSel.options) {
+      const bet = Number(opt.value);
+      const li = document.createElement('li');
+      const b = document.createElement('strong');
+      b.textContent = `${fmtNu(bet)} bet`;
+      // non-breaking spaces keep each amount ("Nu 12,500") on one line
+      li.append(b, ` = Prize ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
+      list.append(li);
+    }
+  }
+  function showPrizeNote() {
+    fillPrizeLines($('prizeNoteList'));
+    const dlg = $('prizeNoteDialog');
+    state.prizeNoteSeen = true; // shown once per player
+    save();
+    dlg.showModal();
+  }
+  $('welcomeDialog').addEventListener('close', showPrizeNote);
+
   function startSignup() {
     const dlg = $('signupDialog');
     if (!/^Player \d{4}$/.test(state.name)) $('signupName').value = state.name;
@@ -507,10 +535,10 @@
       state.grants = state.grants.slice(-500);
       state.nu += Math.floor(amount);
       state.best = Math.max(state.best, state.nu);
-      addHistory('Gift from owner', Math.floor(amount));
+      addHistory('Recharge', Math.floor(amount));
       save();
       render();
-      if (!spinning) setMessage(`🎁 The owner sent you ${fmtNu(amount)}!`, 'win');
+      if (!spinning) setMessage(`Recharge of ${fmtNu(amount)} successfully added`, 'win');
       ensureAudio();
       chime([523, 659, 784, 1047]);
       confetti(150);
@@ -523,4 +551,5 @@
   render();
   save();
   if (!state.gender) startSignup();
+  else if (!state.prizeNoteSeen) showPrizeNote();
 })();

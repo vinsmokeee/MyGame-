@@ -66,6 +66,7 @@
     <button id="menuClose" class="icon-btn" type="button" aria-label="Close menu">✕</button>
   </div>
   <button class="drawer-item" type="button" data-action="contact">💬 Contact us <span class="unread-dot inline" hidden aria-label="New message"></span></button>
+  <button class="drawer-item" type="button" data-action="note">📝 Note</button>
   <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
 </nav>
 
@@ -91,7 +92,7 @@
 <dialog id="welcomeDialog" class="dialog welcome">
   <h2>Welcome to Lucky Spin</h2>
   <div class="welcome-id">Your ID<strong id="welcomeId"></strong></div>
-  <ol class="welcome-list">
+  <ol id="welcomeList" class="welcome-list">
     <li>Every new player gets a <strong>Nu 200</strong> bonus as a gift from our team.</li>
     <li>Win up to <strong>Nu 10,000</strong> &amp; <strong>Nu 50,000</strong>.</li>
     <li>24/7 chat support by the team.</li>
@@ -100,6 +101,25 @@
   </ol>
   <p class="welcome-bye">Tashi Delek, Good Luck 🍀</p>
   <form method="dialog" class="row end"><button class="primary" type="submit">Let's spin!</button></form>
+</dialog>
+
+<dialog id="prizeNoteDialog" class="dialog prize-note">
+  <h2>*Note</h2>
+  <p class="hint">The prizes change according to the bet.</p>
+  <ul id="prizeNoteList" class="prize-note-list"></ul>
+  <form method="dialog" class="row end"><button class="primary" type="submit">OK, let's play!</button></form>
+</dialog>
+
+<dialog id="noteDialog" class="dialog welcome note-all">
+  <h2>Note</h2>
+  <div class="welcome-id">Your ID<strong id="noteId"></strong></div>
+  <h3>Welcome to Lucky Spin</h3>
+  <ol id="noteWelcomeList" class="welcome-list"></ol>
+  <h3>Prizes</h3>
+  <p class="hint">The prizes change according to the bet.</p>
+  <ul id="notePrizeList" class="prize-note-list"></ul>
+  <p class="welcome-bye">Tashi Delek, Good Luck 🍀</p>
+  <form method="dialog" class="row end"><button class="primary" type="submit">Close</button></form>
 </dialog>
 
 <dialog id="nameDialog" class="dialog">
