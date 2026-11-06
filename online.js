@@ -75,7 +75,7 @@ async function start() {
     syncTimer = setTimeout(() => {
       if (!uid) return;
       fb.setDoc(fb.doc(db, 'players', uid), {
-        name: game.name, playerId: game.playerId, nu: game.nu, spins: game.spins, updatedAt: fb.serverTimestamp(),
+        name: game.name, gender: game.gender, playerId: game.playerId, nu: game.nu, spins: game.spins, updatedAt: fb.serverTimestamp(),
       }, { merge: true }).catch(() => {});
     }, delay);
   }

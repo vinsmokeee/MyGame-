@@ -11,40 +11,37 @@
 
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
 
-  // mult = payout as a multiple of the bet. full = big prize paid in full at a Nu 100 bet;
-  // smaller bets win a smaller share (see bigPrize). weight = relative chance; oneIn = exact
-  // rarity (e.g. 1 in 7000 spins), turned into a weight below. Tuned so about 1 spin in 3
-  // wins, 1 in 10 gives the bet back, and over time players get back a bit less than they bet.
+  // p = chance per spin (all slices add up to 1). mult = payout as a multiple of the bet.
+  // full = big prize paid in full at a Nu 100 bet; smaller bets win a smaller share (bigPrize).
+  // Tuned with simulations: LOSE 54%, a win about 1 spin in 4, and over time players get
+  // back about 88% of Nu 50/100 bets (about 98% of Nu 20 bets, with the spin bonus).
+  //   x5 1 in 30 · Nu 1,000 1 in 200 · Nu 10,000 1 in 2,500 · Jackpot Nu 50,000 1 in 20,000
   const SEGMENTS = [
-    { label: 'x1.5',    mult: 1.5, weight: 73,  color: '#0ea5e9' },
-    { label: 'LOSE',    mult: 0,   weight: 109, color: '#334155' },
-    { label: 'x2',      mult: 2,   weight: 35,  color: '#f97316' },
-    { label: 'x1',      mult: 1,   weight: 60,  color: '#22c55e' },
-    { label: 'LOSE',    mult: 0,   weight: 109, color: '#475569' },
-    { label: 'x1.5',    mult: 1.5, weight: 73,  color: '#0ea5e9' },
-    { label: 'NU 10K',  full: 10000, oneIn: 650, color: '#7f1d1d', mega: true },
-    { label: 'LOSE',    mult: 0,   weight: 109, color: '#334155' },
-    { label: 'x3',      mult: 3,   weight: 20,  color: '#a855f7' },
-    { label: 'x1.5',    mult: 1.5, weight: 74,  color: '#0ea5e9' },
-    { label: 'LOSE',    mult: 0,   weight: 109, color: '#475569' },
-    { label: 'x2',      mult: 2,   weight: 35,  color: '#f97316' },
-    { label: 'x1',      mult: 1,   weight: 60,  color: '#22c55e' },
-    { label: 'LOSE',    mult: 0,   weight: 108, color: '#334155' },
-    { label: 'x5',      mult: 5,   weight: 6,   color: '#ec4899' },
-    { label: 'JACKPOT', full: 50000, oneIn: 7000, color: '#eab308', jackpot: true },
+    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
+    { label: 'LOSE',    mult: 0,   p: 0.27,    color: '#334155' },
+    { label: 'x2',      mult: 2,   p: 0.0275,  color: '#f97316' },
+    { label: 'x0.5',    mult: 0.5, p: 0.04811, color: '#64748b' },
+    { label: 'x5',      mult: 5,   p: 1 / 60,  color: '#ec4899' },
+    { label: 'x1',      mult: 1,   p: 0.05,    color: '#22c55e' },
+    { label: 'NU 1K',   full: 1000,  p: 1 / 200,   color: '#166534', big: true },
+    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
+    { label: 'x3',      mult: 3,   p: 0.02,    color: '#a855f7' },
+    { label: 'NU 10K',  full: 10000, p: 1 / 2500,  color: '#7f1d1d', mega: true },
+    { label: 'x0.5',    mult: 0.5, p: 0.04811, color: '#64748b' },
+    { label: 'LOSE',    mult: 0,   p: 0.27,    color: '#475569' },
+    { label: 'x2',      mult: 2,   p: 0.0275,  color: '#f97316' },
+    { label: 'x5',      mult: 5,   p: 1 / 60,  color: '#ec4899' },
+    { label: 'x1',      mult: 1,   p: 0.05,    color: '#22c55e' },
+    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
+    { label: 'JACKPOT', full: 50000, p: 1 / 20000, color: '#eab308', jackpot: true },
   ];
-  // Big prize for a bet: full at Nu 100, e.g. Nu 12,500 / 2,500 at Nu 50, Nu 2,000 / 400 at Nu 20.
+  for (const x of SEGMENTS) x.weight = x.p;
+  // Big prize for a bet: full at Nu 100; at Nu 50 a quarter, at Nu 20 one twenty-fifth.
   const bigPrize = (seg, bet) => Math.round(seg.full * Math.min(1, bet / MAX_BET) ** 2);
   const shortNu = (n) => (n >= 1000 ? `${+(n / 1000).toFixed(1)}K` : String(n));
-  const segLabel = (seg) => (seg.mega ? `NU ${shortNu(bigPrize(seg, Number(betSel.value)))}` : seg.label);
+  const segLabel = (seg) => ((seg.mega || seg.big) ? `NU ${shortNu(bigPrize(seg, Number(betSel.value)))}` : seg.label);
   const N = SEGMENTS.length;
   const ARC = (Math.PI * 2) / N;
-  (() => {
-    const base = SEGMENTS.filter((x) => !x.oneIn).reduce((s, x) => s + x.weight, 0);
-    const rareShare = SEGMENTS.reduce((s, x) => s + (x.oneIn ? 1 / x.oneIn : 0), 0);
-    const total = base / (1 - rareShare);
-    for (const x of SEGMENTS) if (x.oneIn) x.weight = total / x.oneIn;
-  })();
   const TOTAL_WEIGHT = SEGMENTS.reduce((s, x) => s + x.weight, 0);
 
   const $ = (id) => document.getElementById(id);
@@ -70,7 +67,8 @@
   function load() {
     let s = null;
     try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (_) { /* storage unavailable */ }
-    if (!s || typeof s !== 'object') s = {};
+    const fresh = !s || typeof s !== 'object';
+    if (fresh) s = {};
     if (!Number.isFinite(s.nu)) s.nu = Number.isFinite(s.coins) ? s.coins : START_NU; // older saves used "coins"
     delete s.coins;
     delete s.redeemed;
@@ -80,6 +78,7 @@
     if (!Array.isArray(s.grants)) s.grants = [];
     if (!isIdNumber(s.playerId)) { s.playerId = randomIdNumber(); delete s.idOwner; } // older saves used letters
     if (!s.name) s.name = 'Player ' + s.playerId.slice(-4);
+    if (fresh) s.history = [{ label: 'Welcome gift', net: START_NU }];
     return s;
   }
   function save() {
@@ -126,7 +125,7 @@
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = seg.mega ? '#ffd447' : '#fff';
-      ctx.font = `800 ${seg.jackpot || seg.mega ? 24 : 30}px system-ui, sans-serif`;
+      ctx.font = `800 ${seg.full ? 23 : 28}px system-ui, sans-serif`;
       ctx.shadowColor = 'rgba(0,0,0,.5)';
       ctx.shadowBlur = 4;
       ctx.fillText(segLabel(seg), r - 20, 0);
@@ -210,12 +209,15 @@
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
-    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Mega win' : seg.label, net);
+    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Nu 10,000 prize' : seg.big ? 'Nu 1,000 prize' : seg.label, net);
     spinning = false;
 
     let text;
     let kind = '';
-    if (seg.mega) {
+    if (seg.big) {
+      text = `🎉 BIG WIN! You won ${fmtNu(payout)}!`; kind = 'jackpot';
+      confetti(200); chime([523, 659, 784, 1047, 1319]);
+    } else if (seg.mega) {
       text = `🎉 MEGA WIN! You won ${fmtNu(payout)}!`; kind = 'jackpot';
       confetti(400); chime([523, 659, 784, 1047, 1319, 1568]);
     } else if (seg.jackpot) {
@@ -295,16 +297,21 @@
       sw.className = 'swatch';
       sw.style.background = seg.mega ? '#b91c1c' : seg.color;
       const name = document.createElement('span');
-      name.textContent = seg.jackpot ? `Jackpot: ${fmtNu(bigPrize(seg, bet))}`
-        : seg.mega ? `Mega: ${fmtNu(bigPrize(seg, bet))}`
-          : seg.mult === 0 ? 'Lose bet' : seg.mult === 1 ? 'Bet back (×1)' : `×${seg.mult} bet`;
+      if (seg.full) {
+        const title = seg.jackpot ? 'Jackpot' : `${fmtNu(seg.full)} prize`;
+        name.textContent = bet >= MAX_BET ? (seg.jackpot ? `Jackpot: ${fmtNu(seg.full)}` : title)
+          : `${title}: ${fmtNu(bigPrize(seg, bet))} at this bet`;
+      } else {
+        name.textContent = seg.mult === 0 ? 'Lose bet' : seg.mult === 1 ? 'Bet back (×1)'
+          : seg.mult === 0.5 ? 'Half back (×0.5)' : `×${seg.mult} bet`;
+      }
       li.append(sw, name);
       legend.append(li);
     });
     if (bet < MAX_BET) {
       const li = document.createElement('li');
       li.className = 'legend-note';
-      li.textContent = `Bet ${fmtNu(MAX_BET)} to win the full Nu 50,000 Jackpot and Nu 10,000 Mega prize.`;
+      li.textContent = `Bet ${fmtNu(MAX_BET)} to win the full Nu 1,000, Nu 10,000 and Nu 50,000 Jackpot prizes.`;
       legend.append(li);
     }
   }
@@ -408,18 +415,40 @@
     e.preventDefault();
     const amount = Number($('rechargeAmount').value);
     if (!Number.isInteger(amount) || amount < MIN_RECHARGE) {
-      $('rechargeMsg').textContent = `The minimum recharge is ${fmtNu(MIN_RECHARGE)}.`;
+      $('rechargeMsg').textContent = `Minimum recharge is ${fmtNu(MIN_RECHARGE)}.`;
       return;
     }
     if (!window.LuckyChat) { $('rechargeDialog').close(); chatUnavailable(); return; }
     try {
-      await window.LuckyChat.send(`💰 Recharge request: ${fmtNu(amount)}`);
+      await window.LuckyChat.send(`Requested ${fmtNu(amount)}`);
       $('rechargeDialog').close();
       window.LuckyChat.open();
-      setMessage(`Recharge request for ${fmtNu(amount)} sent to the owner.`, 'win');
+      setMessage(`Requested ${fmtNu(amount)}. The team will add it soon.`, 'win');
     } catch (_) {
       $('rechargeMsg').textContent = 'Could not send the request. Check your connection and try again.';
     }
+  });
+
+  // ---------- first visit: name + gender, then welcome with their ID ----------
+  function startSignup() {
+    const dlg = $('signupDialog');
+    if (!/^Player \d{4}$/.test(state.name)) $('signupName').value = state.name;
+    dlg.addEventListener('cancel', (e) => e.preventDefault()); // must be filled in
+    dlg.showModal();
+  }
+  $('signupForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = $('signupName').value.replace(/\s+/g, ' ').trim().slice(0, 20);
+    const gender = (document.querySelector('input[name="gender"]:checked') || {}).value;
+    if (!name) { $('signupMsg').textContent = 'Please enter your name.'; return; }
+    if (!gender) { $('signupMsg').textContent = 'Please choose your gender.'; return; }
+    state.name = name;
+    state.gender = gender;
+    save();
+    render();
+    $('signupDialog').close();
+    $('welcomeId').textContent = state.playerId;
+    $('welcomeDialog').showModal();
   });
 
   $('editName').addEventListener('click', () => {
@@ -440,7 +469,7 @@
   // ---------- other events ----------
   spinBtn.addEventListener('click', spin);
   betSel.addEventListener('change', () => {
-    setMessage(`Each spin costs ${fmtNu(betSel.value)}.`);
+    setMessage('You can bet Nu 20, 50, 100.');
     buildLegend();
     drawWheel();
     render();
@@ -467,6 +496,7 @@
     // Pick a new ID number (used when the current one is already taken).
     newPlayerId() { state.playerId = randomIdNumber(); delete state.idOwner; save(); render(); return state.playerId; },
     get name() { return state.name; },
+    get gender() { return state.gender || ''; },
     get nu() { return state.nu; },
     get spins() { return state.spins; },
     onChange(cb) { listeners.push(cb); },
@@ -492,4 +522,5 @@
   drawWheel();
   render();
   save();
+  if (!state.gender) startSignup();
 })();
