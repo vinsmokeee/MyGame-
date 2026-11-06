@@ -9,13 +9,22 @@
 <body>
 <main class="app">
   <header class="top">
-    <h1>Lucky Spin</h1>
+    <div class="brand">
+      <button id="menuBtn" class="icon-btn" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰</button>
+      <h1>Lucky Spin</h1>
+    </div>
     <div class="stats">
-      <div class="stat"><span class="label">Coins</span><span id="coins" class="value">0</span></div>
-      <div class="stat"><span class="label">Best</span><span id="best" class="value">0</span></div>
+      <div class="stat"><span class="label">Balance</span><span id="nu" class="value">Nu 0</span></div>
+      <div class="stat"><span class="label">Best</span><span id="best" class="value">Nu 0</span></div>
       <div class="stat"><span class="label">Spins</span><span id="spins" class="value">0</span></div>
     </div>
   </header>
+
+  <div class="profile">
+    <span>👤 <strong id="playerName"></strong></span>
+    <button id="editName" class="secondary small" type="button">✏️ Edit name</button>
+    <span class="pid">ID <span id="playerId"></span></span>
+  </div>
 
   <section class="stage">
     <div class="wheel-wrap">
@@ -23,56 +32,115 @@
       <canvas id="wheel" width="600" height="600" aria-label="Prize wheel"></canvas>
       <button id="spin" class="hub" type="button">SPIN</button>
     </div>
-    <p id="message" class="message" role="status" aria-live="polite">Each spin costs 10 coins. Good luck!</p>
+    <p id="message" class="message" role="status" aria-live="polite">Pick a bet and spin. Good luck!</p>
     <div class="controls">
       <label class="bet">
         Bet
         <select id="bet">
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
+          <option value="10">Nu 10</option>
+          <option value="25">Nu 25</option>
+          <option value="50">Nu 50</option>
+          <option value="100">Nu 100</option>
         </select>
       </label>
-      <button id="reset" class="secondary" type="button">New game</button>
       <button id="sound" class="secondary" type="button" aria-pressed="true">Sound: on</button>
+    </div>
+    <div class="bonus">
+      <div class="bonus-text">🎁 <span id="bonusText"></span></div>
+      <div class="bonus-bar"><div id="bonusFill"></div></div>
     </div>
   </section>
 
   <section class="side">
     <h2>Prizes</h2>
     <ul id="legend" class="legend"></ul>
-    <h2>Coin codes</h2>
-    <p class="pid">Your player ID: <strong id="playerId">…</strong>
-      <button id="copyId" class="secondary small" type="button">Copy</button></p>
-    <form id="redeemForm" class="redeem">
-      <input id="codeInput" placeholder="Paste a coin code" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Coin code">
-      <button class="primary" type="submit">Redeem</button>
-    </form>
-    <p id="redeemMsg" class="redeem-msg" role="status" aria-live="polite"></p>
     <h2>History</h2>
     <ol id="history" class="history"></ol>
   </section>
 </main>
+
+<!-- menu -->
+<div id="menuBackdrop" class="backdrop" hidden></div>
+<nav id="menu" class="drawer" aria-label="Menu" hidden>
+  <div class="drawer-head">
+    <strong>Menu</strong>
+    <button id="menuClose" class="icon-btn" type="button" aria-label="Close menu">✕</button>
+  </div>
+  <button class="drawer-item" type="button" data-action="contact">💬 Contact us</button>
+  <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
+  <button class="drawer-item" type="button" data-action="faq">❓ FAQ</button>
+</nav>
+
+<!-- dialogs -->
+<dialog id="nameDialog" class="dialog">
+  <form method="dialog" id="nameForm">
+    <h2>Your name</h2>
+    <p class="hint">This is the name the owner sees.</p>
+    <input id="nameInput" maxlength="20" autocomplete="nickname" required aria-label="Your name">
+    <p id="nameMsg" class="form-msg"></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate class="secondary" type="submit">Cancel</button>
+      <button value="save" class="primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rechargeDialog" class="dialog">
+  <form method="dialog" id="rechargeForm" novalidate>
+    <h2>Recharge Nu</h2>
+    <p class="hint">Send a recharge request to the owner. The minimum recharge is <strong>Nu 100</strong>. The Nu are added to your balance once the owner approves it.</p>
+    <label class="field">Amount (Nu)
+      <input id="rechargeAmount" type="number" inputmode="numeric" min="100" step="1" value="100">
+    </label>
+    <p id="rechargeMsg" class="form-msg"></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate class="secondary" type="submit">Cancel</button>
+      <button value="send" class="primary" type="submit">Send request</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="faqDialog" class="dialog faq">
+  <h2>FAQ</h2>
+  <details open><summary>How do I play?</summary><p>Pick a bet under the wheel and tap <strong>SPIN</strong>. Where the wheel stops decides your prize.</p></details>
+  <details><summary>What can I win?</summary><p>Each segment multiplies your bet (×0.5 up to the ×20 Jackpot). The rare <strong>Nu 10,000</strong> segment pays Nu 10,000 whatever you bet. LOSE means you lose your bet.</p></details>
+  <details><summary>What is the spin bonus?</summary><p>Every 10 spins you get <strong>Nu 50</strong> free. The bar under the wheel shows how close you are.</p></details>
+  <details><summary>How do I get more Nu?</summary><p>Win on the wheel, collect the spin bonus, or open ☰ Menu → <strong>Recharge Nu</strong> (minimum Nu 100).</p></details>
+  <details><summary>How do I change my name?</summary><p>Tap <strong>✏️ Edit name</strong> next to your name at the top.</p></details>
+  <details><summary>How do I contact the owner?</summary><p>Tap <strong>💬 Chat</strong> or open ☰ Menu → <strong>Contact us</strong>. You can send messages and photos.</p></details>
+  <details><summary>Is my progress saved?</summary><p>Yes, in this browser on this device. Clearing your browser data or switching devices starts a new account.</p></details>
+  <details><summary>Are Nu real money?</summary><p>No. Nu in Lucky Spin are play points for fun only. They have no cash value and can't be withdrawn.</p></details>
+  <form method="dialog" class="row end"><button class="primary" type="submit">Close</button></form>
+</dialog>
+
+<dialog id="infoDialog" class="dialog">
+  <h2 id="infoTitle"></h2>
+  <p id="infoText" class="hint"></p>
+  <form method="dialog" class="row end"><button class="primary" type="submit">OK</button></form>
+</dialog>
+
+<!-- chat -->
 <button id="chatFab" class="chat-fab" type="button" aria-controls="chatPanel" aria-expanded="false" hidden>
   💬 Chat<span id="chatBadge" class="chat-badge" hidden aria-label="New message"></span>
 </button>
 <section id="chatPanel" class="chat-panel" aria-label="Chat with the owner" hidden>
   <header class="chat-head">
     <strong>Message the owner</strong>
-    <button id="chatClose" class="chat-close" type="button" aria-label="Close chat">✕</button>
+    <button id="chatClose" class="icon-btn" type="button" aria-label="Close chat">✕</button>
   </header>
   <div id="chatList" class="chat-list" aria-live="polite"></div>
   <p id="chatNote" class="chat-note" hidden></p>
   <form id="chatForm" class="chat-form">
+    <label class="attach" title="Send a photo">📷<input id="chatPhoto" type="file" accept="image/*" hidden disabled></label>
     <input id="chatInput" maxlength="500" placeholder="Type a message…" autocomplete="off" aria-label="Message" disabled>
     <button class="primary" type="submit" disabled>Send</button>
   </form>
 </section>
+<div id="lightbox" class="lightbox" hidden><img alt="Photo"></div>
+
 <canvas id="confetti" aria-hidden="true"></canvas>
-<script src="coin-codes.js"></script>
 <script src="game.js"></script>
 <script src="chat-config.js"></script>
-<script type="module" src="chat.js"></script>
+<script type="module" src="online.js"></script>
 </body>
 </html>

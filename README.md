@@ -1,35 +1,33 @@
 # Lucky Spin
 
-A browser prize-wheel game. Open `index.html` in any modern browser. No build step or server is needed.
+A browser prize-wheel game played with **Nu** (play points). Open `index.html` in a modern browser, or visit
+https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is needed.
 
 ## How to play
-- You start with 100 coins. Pick a bet (10/25/50/100) and press **SPIN** (or the Space key).
-- The wheel pays a multiple of your bet: LOSE, x0.5, x1, x2, x3, x5, or the x20 **JACKPOT**.
-- The Prizes panel lists the odds for each result. Recent spins appear in History.
-- Coins, best score and history are saved in your browser. **New game** resets you to 100 coins.
+- Players start with Nu 100, pick a bet (Nu 10/25/50/100) and press **SPIN** (or Space).
+- The wheel pays a multiple of the bet (×0.5 to the ×20 Jackpot). The rare **Nu 10,000** segment pays Nu 10,000 on any bet.
+- Every 10 spins gives a free **Nu 50** bonus.
+- Players can set their own name (✏️ Edit name).
+- The ☰ menu has **Contact us** (chat), **Recharge Nu** (sends the owner a request, minimum Nu 100) and **FAQ**.
+- Progress is saved in the player's browser.
+
+## Owner tools (`admin.html`)
+Sign in with the owner's Firebase email/password to:
+- **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
+- **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat.
+
+## Online setup (Firebase, free plan)
+Chat, gifts and the player list use Firebase:
+1. Create a Firebase project; enable **Anonymous** and **Email/Password** sign-in; add the owner as a user.
+2. Create a **Firestore** database, then publish `firestore.rules` with `ADMIN_UID` replaced by the owner's User UID.
+3. Fill in `chat-config.js` with the web app config and `adminUid`.
+
+Until `chat-config.js` is filled in, the chat button is hidden and the game works offline.
+Photos are shrunk in the browser and stored with the message, so Cloud Storage (a paid feature) is not needed.
 
 ## Files
-- `index.html`: page layout
-- `style.css`: styling (responsive down to phone width)
-- `game.js`: wheel drawing, weighted spin logic, sounds (Web Audio) and confetti
-
-## Giving coins (admin)
-The owner can hand out coins with signed, one-time **coin codes**:
-
-1. The player reads their **player ID** from the "Coin codes" box in the game.
-2. The owner opens `admin.html` (e.g. `https://vinsmokeee.github.io/MyGame-/admin.html`), unlocks it once with the
-   private admin key (`LSKEY.…`, never stored in this repo), enters the player ID and amount, and taps **Make code**.
-3. The player pastes the code into the game and taps **Redeem**.
-
-Each code works only for that player ID and only once. Codes are ECDSA-signed; `coin-codes.js` holds only the
-public key, so nobody else can create valid codes. If the admin key is lost or leaked, create a new one on the admin
-page and replace `PUBLIC_KEY` in `coin-codes.js` with the new public key.
-
-Note: progress lives in each player's browser, so this is a fun-game safeguard, not bank-grade security.
-
-## In-game chat
-Players tap **💬 Chat** to message the owner; the owner reads and replies from the **Inbox** on `admin.html` and can
-send coins straight into a chat (the player taps **Redeem coins**). Messages are stored in the owner's Firebase
-project. Setup: create a Firebase project, enable Anonymous and Email/Password sign-in, add an admin user, create a
-Firestore database, publish `firestore.rules` (with `ADMIN_UID` replaced by the admin's User UID), and fill in
-`chat-config.js`. Until `chat-config.js` is filled in, the chat button stays hidden.
+- `index.html`, `style.css`, `game.js`: the game
+- `online.js`: player chat, owner gifts and profile sync
+- `admin.html`, `admin.js`: owner tools
+- `shared.js`: chat helpers used by both
+- `chat-config.js`: Firebase settings; `firestore.rules`: database security rules

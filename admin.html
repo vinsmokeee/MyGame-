@@ -4,205 +4,102 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Lucky Spin Admin</title>
+<title>Lucky Spin Owner</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  .admin { max-width: 560px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .admin { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
   .card { background: var(--panel); border-radius: 14px; padding: 16px; }
-  .card p { color: var(--muted); margin: 0 0 12px; font-size: .95rem; line-height: 1.45; }
-  label.field { display: block; margin-bottom: 12px; color: var(--muted); font-size: .9rem; }
-  label.field input, label.field textarea { display: block; width: 100%; margin-top: 4px; }
-  .output { word-break: break-all; font-family: ui-monospace, Menlo, monospace; font-size: .85rem;
-            background: var(--bg); border-radius: 8px; padding: 10px; color: var(--text); }
-  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .card .field { margin-bottom: 12px; }
+  .card .field input { display: block; width: 100%; }
+  .status { min-height: 1.2em; margin: 8px 0 0; font-size: .9rem; }
   .status.ok { color: var(--win); }
   .status.err { color: var(--lose); }
-  [hidden] { display: none !important; }
-  .count { background: var(--lose); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: .8rem; margin-left: 6px; }
-  .chat-index { list-style: none; margin: 0; padding: 0; }
-  .chat-index li button {
-    width: 100%; text-align: left; background: var(--bg); color: var(--text); border: 1px solid #2d2759;
-    border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font: inherit; cursor: pointer;
-    display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
-  }
-  .chat-index .who { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .06em; }
-  .chat-index .when { color: var(--muted); font-size: .8rem; }
-  .chat-index .last { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .chat-index .unread .who::after { content: " ●"; color: var(--lose); }
-  .chat-index .unread .last { color: var(--text); font-weight: 600; }
-  .thread-head { align-items: center; margin-bottom: 8px; }
-  .thread-head strong { font-family: ui-monospace, Menlo, monospace; letter-spacing: .06em; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab { flex: 1; background: var(--bg); color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+  .count { background: var(--lose); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: .8rem; margin-left: 4px; }
+  .search { width: 100%; margin-bottom: 12px; }
+  .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .item { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .item-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .item .who { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  .item .sub { color: var(--muted); font-size: .85rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .item .actions input { width: 120px; }
+  button.item { width: 100%; text-align: left; color: var(--text); font: inherit; cursor: pointer; }
+  button.item.unread { border-color: var(--accent); }
+  button.item.unread .who::after { content: " ●"; color: var(--lose); }
+  button.item.unread .sub { color: var(--text); font-weight: 600; }
+  .thread-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .thread-head .who { font-weight: 700; }
+  .thread-head .meta { color: var(--muted); font-size: .8rem; }
   .thread-list { height: 50vh; background: var(--bg); border-radius: 10px; }
-  #thread .chat-form { padding: 10px 0 0; border: 0; }
-  #coinForm input { max-width: 120px; }
+  .gift { display: flex; gap: 8px; margin-top: 8px; }
+  .gift input { width: 140px; }
 </style>
 </head>
 <body>
 <main class="admin">
   <header class="top">
-    <h1>Lucky Spin Admin</h1>
+    <h1>Lucky Spin Owner</h1>
     <a href="./" class="link">Back to game</a>
   </header>
 
-  <section id="inbox" class="card">
-    <h2>Inbox <span id="inboxCount" class="count" hidden></span></h2>
-    <p id="inboxNote">Chat isn't switched on yet.</p>
-    <form id="loginForm" hidden>
-      <label class="field">Admin email
-        <input id="loginEmail" type="email" autocomplete="username" autocapitalize="off">
+  <section id="notReady" class="card">
+    <p class="hint">The owner tools are not switched on yet. They need the Firebase settings in <code>chat-config.js</code>.</p>
+  </section>
+
+  <section id="login" class="card" hidden>
+    <h2>Owner sign-in</h2>
+    <form id="loginForm">
+      <label class="field">Email
+        <input id="loginEmail" type="email" autocomplete="username" autocapitalize="off" required>
       </label>
       <label class="field">Password
-        <input id="loginPass" type="password" autocomplete="current-password">
+        <input id="loginPass" type="password" autocomplete="current-password" required>
       </label>
-      <div class="row"><button class="primary" type="submit">Sign in</button></div>
+      <button class="primary" type="submit">Sign in</button>
     </form>
-    <div id="inboxBody" hidden>
-      <ul id="chatIndex" class="chat-index"></ul>
+    <p id="loginMsg" class="status err" role="status"></p>
+  </section>
+
+  <section id="dash" class="card" hidden>
+    <div class="tabs" role="tablist">
+      <button id="tabPlayers" class="tab" role="tab" type="button" aria-selected="true">Players</button>
+      <button id="tabInbox" class="tab" role="tab" type="button" aria-selected="false">Inbox <span id="inboxCount" class="count" hidden></span></button>
+    </div>
+
+    <div id="playersView">
+      <input id="search" class="search" type="search" placeholder="Search name or ID" aria-label="Search players">
+      <ul id="playerList" class="items"></ul>
+    </div>
+
+    <div id="inboxView" hidden>
+      <ul id="chatIndex" class="items"></ul>
       <div id="thread" hidden>
-        <div class="row thread-head">
-          <button id="backToInbox" class="secondary small" type="button">← All chats</button>
-          <strong id="threadTitle"></strong>
+        <div class="thread-head">
+          <button id="backToInbox" class="secondary small" type="button">← Back</button>
+          <div><div id="threadName" class="who"></div><div id="threadMeta" class="meta"></div></div>
         </div>
         <div id="threadList" class="chat-list thread-list"></div>
-        <form id="replyForm" class="chat-form">
+        <form id="replyForm" class="chat-form" style="padding:10px 0 0;border:0">
+          <label class="attach" title="Send a photo">📷<input id="replyPhoto" type="file" accept="image/*" hidden></label>
           <input id="replyInput" maxlength="500" placeholder="Reply…" autocomplete="off" aria-label="Reply">
           <button class="primary" type="submit">Send</button>
         </form>
-        <form id="coinForm" class="chat-form">
-          <input id="coinAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Coins to send">
-          <button class="secondary" type="submit">🎁 Send coins</button>
+        <form id="threadGift" class="gift">
+          <input id="threadGiftAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
+          <button class="secondary" type="submit">🎁 Give Nu</button>
         </form>
         <p id="threadMsg" class="status" role="status"></p>
       </div>
-      <div class="row" style="margin-top:12px"><button id="signOut" class="secondary small" type="button">Sign out of inbox</button></div>
     </div>
-  </section>
 
-  <section id="setup" class="card">
-    <h2>Unlock admin</h2>
-    <p>Paste your admin key (it starts with <code>LSKEY.</code>). It is saved only in this browser and is never sent anywhere.</p>
-    <label class="field">Admin key
-      <textarea id="keyInput" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-    </label>
-    <div class="row"><button id="saveKey" class="primary" type="button">Unlock</button></div>
-    <p id="setupMsg" class="status" role="status"></p>
-  </section>
-
-  <section id="give" class="card" hidden>
-    <h2>Give coins</h2>
-    <p>Ask the player for the player ID shown under “Coin codes” in their game. Make a code, then send it to them to redeem.</p>
-    <label class="field">Player ID
-      <input id="pid" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. K7QM3X">
-    </label>
-    <label class="field">Coins
-      <input id="amount" type="number" inputmode="numeric" min="1" step="1" value="100">
-    </label>
-    <div class="row"><button id="make" class="primary" type="button">Make code</button></div>
-    <p id="giveMsg" class="status" role="status"></p>
-    <div id="result" hidden>
-      <div id="code" class="output"></div>
-      <div class="row" style="margin-top:10px">
-        <button id="copyCode" class="secondary" type="button">Copy code</button>
-      </div>
-    </div>
-  </section>
-
-  <section id="manage" class="card" hidden>
-    <h2>This device</h2>
-    <p>Admin is unlocked on this device. Forgetting the key here does not affect codes you already sent; keep a copy of the key somewhere safe.</p>
-    <div class="row"><button id="forget" class="secondary" type="button">Forget key on this device</button></div>
-  </section>
-
-  <section class="card">
-    <h2>New admin key</h2>
-    <p>Only needed if your key is lost or leaked. This makes a brand-new key; the game must then be updated with the new public key shown below, after which old codes and the old key stop working.</p>
-    <div class="row"><button id="newKey" class="secondary" type="button">Create new key</button></div>
-    <div id="newKeyOut" hidden>
-      <p style="margin-top:12px">Admin key: save it somewhere private and paste it into “Unlock admin”.</p>
-      <div id="newToken" class="output"></div>
-      <p style="margin-top:12px">Public key: send this to whoever updates the game's <code>coin-codes.js</code>. It is safe to share.</p>
-      <div id="newPublic" class="output"></div>
-    </div>
+    <p style="margin:16px 0 0"><button id="signOut" class="secondary small" type="button">Sign out</button></p>
   </section>
 </main>
-<script src="coin-codes.js"></script>
 <script src="chat-config.js"></script>
-<script>
-(() => {
-  'use strict';
-  const STORE = 'luckySpin.adminKey';
-  const $ = (id) => document.getElementById(id);
-  let adminJwk = null;
-
-  const get = () => { try { return localStorage.getItem(STORE); } catch (_) { return null; } };
-  const set = (v) => { try { v ? localStorage.setItem(STORE, v) : localStorage.removeItem(STORE); } catch (_) {} };
-
-  function status(el, text, ok) {
-    el.textContent = text;
-    el.className = 'status ' + (ok ? 'ok' : 'err');
-  }
-
-  function unlock(token, persist) {
-    const jwk = CoinCodes.parseAdminKey(token);
-    if (!CoinCodes.matchesGame(jwk)) throw new Error('This key does not match the game. Codes made with it would be rejected.');
-    adminJwk = jwk;
-    if (persist) set(token.trim());
-    $('setup').hidden = true;
-    $('give').hidden = false;
-    $('manage').hidden = false;
-  }
-
-  $('saveKey').addEventListener('click', () => {
-    try { unlock($('keyInput').value, true); $('keyInput').value = ''; }
-    catch (e) { status($('setupMsg'), e.message, false); }
-  });
-
-  $('make').addEventListener('click', async () => {
-    $('result').hidden = true;
-    try {
-      const code = await CoinCodes.createCode(adminJwk, $('pid').value, Number($('amount').value));
-      $('code').textContent = code;
-      $('result').hidden = false;
-      status($('giveMsg'), `Code for ${Number($('amount').value).toLocaleString()} coins is ready. It works once, only for ${$('pid').value.trim().toUpperCase()}.`, true);
-    } catch (e) { status($('giveMsg'), e.message, false); }
-  });
-
-  async function copy(text, btn) {
-    try { await navigator.clipboard.writeText(text); }
-    catch (_) {
-      const r = document.createRange(); r.selectNodeContents($('code'));
-      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      document.execCommand('copy');
-    }
-    const old = btn.textContent; btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = old; }, 1500);
-  }
-  $('copyCode').addEventListener('click', (e) => copy($('code').textContent, e.currentTarget));
-
-  $('forget').addEventListener('click', () => {
-    if (!confirm('Forget the admin key on this device?')) return;
-    set(null); adminJwk = null;
-    $('setup').hidden = false; $('give').hidden = true; $('manage').hidden = true; $('result').hidden = true;
-    status($('setupMsg'), 'Key removed from this device.', true);
-  });
-
-  $('newKey').addEventListener('click', async () => {
-    const { token, publicKey } = await CoinCodes.generateAdminKey();
-    $('newToken').textContent = token;
-    $('newPublic').textContent = JSON.stringify(publicKey);
-    $('newKeyOut').hidden = false;
-  });
-
-  // Lets the inbox (admin-chat.js) make coin codes with the unlocked key.
-  window.AdminCoins = {
-    ready: () => !!adminJwk,
-    make: (pid, amount) => CoinCodes.createCode(adminJwk, pid, amount),
-  };
-
-  const saved = get();
-  if (saved) { try { unlock(saved, false); } catch (e) { status($('setupMsg'), e.message, false); } }
-})();
-</script>
-<script type="module" src="admin-chat.js"></script>
+<script type="module" src="admin.js"></script>
 </body>
 </html>
