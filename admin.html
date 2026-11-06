@@ -24,6 +24,7 @@
   .item-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
   .item .who { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .meta { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  .idtag { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .06em; background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 6px; padding: 1px 6px; font-size: .85rem; margin-right: 6px; }
   .item .sub { color: var(--muted); font-size: .85rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
   .item .actions input { width: 120px; }
@@ -71,7 +72,7 @@
     </div>
 
     <div id="playersView">
-      <input id="search" class="search" type="search" placeholder="Search name or ID" aria-label="Search players">
+      <input id="search" class="search" type="search" placeholder="Search by name or ID number" aria-label="Search players">
       <ul id="playerList" class="items"></ul>
     </div>
 

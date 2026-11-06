@@ -81,6 +81,23 @@ async function start() {
   }
   game.onChange(() => syncProfile());
 
+  // Reserve this player's ID number in ids/{number} so no two players share one.
+  // The database only allows creating an ID that nobody has yet; if it is taken,
+  // pick a new number and try again.
+  async function claimId() {
+    if (game.idOwner === uid) return;
+    for (let tries = 0; tries < 8; tries++) {
+      try {
+        await fb.setDoc(fb.doc(db, 'ids', game.playerId), { uid });
+        game.confirmId(uid);
+        return;
+      } catch (err) {
+        if (err && err.code === 'permission-denied') game.newPlayerId(); // taken
+        else return; // offline or other problem: try again next time the game opens
+      }
+    }
+  }
+
   fb.onAuthStateChanged(auth, (user) => {
     if (!user || uid) return;
     uid = user.uid;
@@ -89,7 +106,7 @@ async function start() {
     input.disabled = false;
     photo.disabled = false;
     sendBtn.disabled = false;
-    syncProfile(0);
+    claimId().finally(() => syncProfile(0));
 
     fb.onSnapshot(
       fb.query(fb.collection(chatRef(), 'messages'), fb.orderBy('createdAt'), fb.limitToLast(100)),

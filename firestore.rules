@@ -13,6 +13,16 @@ service cloud.firestore {
       return !(key in data) || (data[key] is string && data[key].size() <= max);
     }
 
+    // Player ID numbers: ids/{6-digit number} -> { uid }. A number can be claimed
+    // only if nobody has it yet (creating an existing document counts as an update).
+    match /ids/{idNumber} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null
+        && idNumber.matches('^[1-9][0-9]{5}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+    }
+
     // Each player's profile, shared with the owner: players/{player's auth uid}
     match /players/{uid} {
       allow read: if isAdmin() || isOwner(uid);

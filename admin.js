@@ -117,9 +117,10 @@ async function start() {
     }
     for (const p of shown) {
       const li = rows.get(p.uid) || createRow(p.uid);
-      li.querySelector('.who').textContent = p.name || 'Unnamed';
+      li.querySelector('.idtag').textContent = `ID ${p.playerId || '?'}`;
+      li.querySelector('.nm').textContent = p.name || 'Unnamed';
       li.querySelector('.meta').textContent = fmtTime(p.updatedAt);
-      li.querySelector('.sub').textContent = `ID ${p.playerId || '?'} · ${fmtNu(p.nu || 0)} · ${p.spins || 0} spins`;
+      li.querySelector('.sub').textContent = `Balance ${fmtNu(p.nu || 0)} · ${p.spins || 0} spins`;
       ul.append(li);
     }
   }
@@ -128,7 +129,7 @@ async function start() {
       const li = document.createElement('li');
       li.className = 'item';
       li.innerHTML = `
-        <div class="item-top"><span class="who"></span><span class="meta"></span></div>
+        <div class="item-top"><span class="who"><span class="idtag"></span><span class="nm"></span></span><span class="meta"></span></div>
         <div class="sub"></div>
         <form class="actions">
           <input type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
@@ -144,7 +145,7 @@ async function start() {
         const name = (players.get(uid) || {}).name || 'player';
         try {
           await giveNu(uid, amount);
-          status(msg, `Sent ${fmtNu(amount)} to ${name}.`, true);
+          status(msg, `Sent ${fmtNu(amount)} to ${name} (ID ${(players.get(uid) || {}).playerId || '?'}).`, true);
         } catch (err) { status(msg, err.message || 'Could not send Nu.', false); }
       });
       li.querySelector('[data-chat]').addEventListener('click', () => { showTab('inbox'); openThread(uid); });
@@ -170,8 +171,9 @@ async function start() {
       b.type = 'button';
       b.className = 'item' + (c.unread ? ' unread' : '');
       const who = playerLabel(c.uid, c);
-      b.innerHTML = '<div class="item-top"><span class="who"></span><span class="meta"></span></div><div class="sub"></div>';
-      b.querySelector('.who').textContent = who.name;
+      b.innerHTML = '<div class="item-top"><span class="who"><span class="idtag"></span><span class="nm"></span></span><span class="meta"></span></div><div class="sub"></div>';
+      b.querySelector('.idtag').textContent = `ID ${who.id || '?'}`;
+      b.querySelector('.nm').textContent = who.name;
       b.querySelector('.meta').textContent = fmtTime(c.updatedAt);
       b.querySelector('.sub').textContent = c.lastMessage || '';
       b.addEventListener('click', () => openThread(c.uid));

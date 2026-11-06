@@ -7,12 +7,12 @@
   const BONUS_EVERY = 10;   // spins
   const BONUS_NU = 50;
   const MIN_RECHARGE = 100;
-  const ID_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
 
-  // mult = payout as a multiple of the bet; prize = fixed payout; weight = relative chance.
-  // The Nu 10,000 segment is deliberately much rarer than its slice of the wheel suggests.
+  // mult = payout as a multiple of the bet; prize = fixed payout on any bet.
+  // weight = relative chance; oneIn = exact rarity (e.g. 1 in 7000 spins), which
+  // is turned into a weight below. The big prizes are far rarer than their slices look.
   const SEGMENTS = [
     { label: 'x2',      mult: 2,   weight: 12,   color: '#f97316' },
     { label: 'LOSE',    mult: 0,   weight: 22,   color: '#334155' },
@@ -20,16 +20,22 @@
     { label: 'x3',      mult: 3,   weight: 6,    color: '#a855f7' },
     { label: 'LOSE',    mult: 0,   weight: 22,   color: '#475569' },
     { label: 'x0.5',    mult: 0.5, weight: 16,   color: '#14b8a6' },
-    { label: 'NU 10K',  prize: 10000, weight: 0.04, color: '#7f1d1d', mega: true },
+    { label: 'NU 10K',  prize: 10000, oneIn: 650, color: '#7f1d1d', mega: true },
     { label: 'x5',      mult: 5,   weight: 3,    color: '#ec4899' },
     { label: 'LOSE',    mult: 0,   weight: 22,   color: '#334155' },
     { label: 'x1',      mult: 1,   weight: 16,   color: '#22c55e' },
     { label: 'x2',      mult: 2,   weight: 12,   color: '#ef4444' },
     { label: 'x0.5',    mult: 0.5, weight: 16,   color: '#06b6d4' },
-    { label: 'JACKPOT', mult: 20,  weight: 0.5,  color: '#eab308', jackpot: true },
+    { label: 'JACKPOT', prize: 50000, oneIn: 7000, color: '#eab308', jackpot: true },
   ];
   const N = SEGMENTS.length;
   const ARC = (Math.PI * 2) / N;
+  (() => {
+    const base = SEGMENTS.filter((x) => !x.oneIn).reduce((s, x) => s + x.weight, 0);
+    const rareShare = SEGMENTS.reduce((s, x) => s + (x.oneIn ? 1 / x.oneIn : 0), 0);
+    const total = base / (1 - rareShare);
+    for (const x of SEGMENTS) if (x.oneIn) x.weight = total / x.oneIn;
+  })();
   const TOTAL_WEIGHT = SEGMENTS.reduce((s, x) => s + x.weight, 0);
 
   const $ = (id) => document.getElementById(id);
@@ -40,7 +46,9 @@
   const msg = $('message');
   const pointer = document.querySelector('.pointer');
 
-  const randomId = (len) => Array.from(crypto.getRandomValues(new Uint8Array(len)), (b) => ID_CHARS[b % ID_CHARS.length]).join('');
+  // 6-digit player ID number (100000-999999). online.js makes sure it is unique.
+  const randomIdNumber = () => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+  const isIdNumber = (id) => /^[1-9]\d{5}$/.test(String(id || ''));
 
   let state = load();
   let rotation = 0;
@@ -61,8 +69,8 @@
     if (!Number.isFinite(s.spins)) s.spins = 0;
     if (!Array.isArray(s.history)) s.history = [];
     if (!Array.isArray(s.grants)) s.grants = [];
-    if (!s.playerId) s.playerId = randomId(6);
-    if (!s.name) s.name = 'Player ' + s.playerId.slice(0, 4);
+    if (!isIdNumber(s.playerId)) { s.playerId = randomIdNumber(); delete s.idOwner; } // older saves used letters
+    if (!s.name) s.name = 'Player ' + s.playerId.slice(-4);
     return s;
   }
   function save() {
@@ -193,7 +201,7 @@
     const payout = seg.prize ? seg.prize : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
-    addHistory(seg.mega ? 'Nu 10,000' : seg.label, net);
+    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Nu 10,000' : seg.label, net);
     spinning = false;
 
     let text;
@@ -202,8 +210,8 @@
       text = `🎉 MEGA WIN! You won ${fmtNu(payout)}!`; kind = 'jackpot';
       confetti(400); chime([523, 659, 784, 1047, 1319, 1568]);
     } else if (seg.jackpot) {
-      text = `JACKPOT! You won ${fmtNu(payout)}!`; kind = 'jackpot';
-      confetti(250); chime([523, 659, 784, 1047, 1319]);
+      text = `🏆 JACKPOT! You won ${fmtNu(payout)}!`; kind = 'jackpot';
+      confetti(600); chime([523, 659, 784, 1047, 1319, 1568, 2093]);
     } else if (net > 0) {
       text = `${seg.label}! You won ${fmtNu(payout)}.`; kind = 'win';
       if (seg.mult >= 3) confetti(100);
@@ -268,7 +276,7 @@
   function buildLegend() {
     const seen = new Map();
     for (const s of SEGMENTS) if (!seen.has(s.label)) seen.set(s.label, s);
-    const value = (s) => (s.prize ? 1e9 : s.mult);
+    const value = (s) => (s.prize ? 1e9 + s.prize : s.mult);
     const legend = $('legend');
     [...seen.values()].sort((a, b) => value(b) - value(a)).forEach((s) => {
       const li = document.createElement('li');
@@ -276,8 +284,8 @@
       sw.className = 'swatch';
       sw.style.background = s.mega ? '#b91c1c' : s.color;
       const name = document.createElement('span');
-      name.textContent = s.mega ? 'Nu 10,000 (any bet)'
-        : s.jackpot ? `Jackpot (×${s.mult} bet)`
+      name.textContent = s.jackpot ? 'Jackpot: Nu 50,000 (any bet)'
+        : s.mega ? 'Nu 10,000 (any bet)'
           : s.mult === 0 ? 'Lose bet' : `×${s.mult} bet`;
       li.append(sw, name);
       legend.append(li);
@@ -431,6 +439,11 @@
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   window.LuckySpin = {
     get playerId() { return state.playerId; },
+    // Which online account has confirmed this ID number as its own.
+    get idOwner() { return state.idOwner || null; },
+    confirmId(owner) { state.idOwner = owner; save(); },
+    // Pick a new ID number (used when the current one is already taken).
+    newPlayerId() { state.playerId = randomIdNumber(); delete state.idOwner; save(); render(); return state.playerId; },
     get name() { return state.name; },
     get nu() { return state.nu; },
     get spins() { return state.spins; },

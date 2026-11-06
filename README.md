@@ -5,7 +5,9 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 
 ## How to play
 - Players start with Nu 100, pick a bet (Nu 10/25/50/100) and press **SPIN** (or Space).
-- The wheel pays a multiple of the bet (×0.5 to the ×20 Jackpot). The rare **Nu 10,000** segment pays Nu 10,000 on any bet.
+- The wheel pays a multiple of the bet (×0.5 to ×5), plus two fixed prizes on any bet: **Nu 10,000** (about 1 in 650 spins)
+  and the **Jackpot, Nu 50,000** (about 1 in 7,000 spins). Change `oneIn` in `game.js` to adjust them.
+- Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 50** bonus.
 - Players can set their own name (✏️ Edit name).
 - The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
