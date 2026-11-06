@@ -42,11 +42,20 @@
   <section class="side">
     <h2>Prizes</h2>
     <ul id="legend" class="legend"></ul>
+    <h2>Coin codes</h2>
+    <p class="pid">Your player ID: <strong id="playerId">…</strong>
+      <button id="copyId" class="secondary small" type="button">Copy</button></p>
+    <form id="redeemForm" class="redeem">
+      <input id="codeInput" placeholder="Paste a coin code" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Coin code">
+      <button class="primary" type="submit">Redeem</button>
+    </form>
+    <p id="redeemMsg" class="redeem-msg" role="status" aria-live="polite"></p>
     <h2>History</h2>
     <ol id="history" class="history"></ol>
   </section>
 </main>
 <canvas id="confetti" aria-hidden="true"></canvas>
+<script src="coin-codes.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

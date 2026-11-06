@@ -33,6 +33,9 @@
   const pointer = document.querySelector('.pointer');
 
   let state = load() || { coins: START_COINS, best: START_COINS, spins: 0, history: [] };
+  // Player ID and used coin codes survive "New game".
+  if (!state.playerId) state.playerId = CoinCodes.randomId(6);
+  if (!Array.isArray(state.redeemed)) state.redeemed = [];
   let rotation = 0;          // current wheel rotation, radians
   let spinning = false;
   let soundOn = true;
@@ -307,7 +310,10 @@
   betSel.addEventListener('change', () => { setMessage(`Each spin costs ${betSel.value} coins.`); render(); });
   $('reset').addEventListener('click', () => {
     if (spinning) return;
-    state = { coins: START_COINS, best: Math.max(state.best, START_COINS), spins: 0, history: [] };
+    state = {
+      coins: START_COINS, best: Math.max(state.best, START_COINS), spins: 0, history: [],
+      playerId: state.playerId, redeemed: state.redeemed,
+    };
     save();
     setMessage('New game! You have 100 coins.');
     render();
@@ -318,9 +324,47 @@
     e.currentTarget.setAttribute('aria-pressed', String(soundOn));
   });
   document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
+    if (e.code === 'Space' && !['SELECT', 'BUTTON', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
       e.preventDefault();
       spin();
+    }
+  });
+
+  // ---------- coin codes ----------
+  const redeemMsg = $('redeemMsg');
+  function redeemStatus(text, ok) {
+    redeemMsg.textContent = text;
+    redeemMsg.className = 'redeem-msg ' + (ok ? 'ok' : 'err');
+  }
+  $('playerId').textContent = state.playerId;
+  $('copyId').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    try { await navigator.clipboard.writeText(state.playerId); btn.textContent = 'Copied!'; }
+    catch (_) { btn.textContent = 'Copy failed'; }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+  $('redeemForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (spinning) { redeemStatus('Wait for the wheel to stop first.', false); return; }
+    const input = $('codeInput');
+    try {
+      const { amount, nonce } = await CoinCodes.verify(input.value, state.playerId);
+      if (state.redeemed.includes(nonce)) throw new Error('This code has already been used.');
+      state.redeemed.push(nonce);
+      state.coins += amount;
+      state.best = Math.max(state.best, state.coins);
+      state.history.unshift({ label: 'Gift', net: amount });
+      state.history = state.history.slice(0, 30);
+      save();
+      render();
+      input.value = '';
+      redeemStatus(`You received ${amount.toLocaleString()} coins!`, true);
+      setMessage(`Gift received: +${amount.toLocaleString()} coins!`, 'win');
+      ensureAudio();
+      chime([523, 659, 784, 1047]);
+      confetti(120);
+    } catch (err) {
+      redeemStatus(err.message, false);
     }
   });
 
