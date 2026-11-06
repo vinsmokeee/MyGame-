@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Lucky Spin Owner</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .admin { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border-radius: 14px; padding: 16px; }
+  .card .field { margin-bottom: 12px; }
+  .card .field input { display: block; width: 100%; }
+  .status { min-height: 1.2em; margin: 8px 0 0; font-size: .9rem; }
+  .status.ok { color: var(--win); }
+  .status.err { color: var(--lose); }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab { flex: 1; background: var(--bg); color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+  .count { background: var(--lose); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: .8rem; margin-left: 4px; }
+  .search { width: 100%; margin-bottom: 12px; }
+  .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .item { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .item-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .item .who { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .meta { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  .idtag { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .06em; background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 6px; padding: 1px 6px; font-size: .85rem; margin-right: 6px; }
+  .item .sub { color: var(--muted); font-size: .85rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .item .actions input { width: 120px; }
+  button.item { width: 100%; text-align: left; color: var(--text); font: inherit; cursor: pointer; }
+  button.item.unread { border-color: var(--accent); }
+  button.item.unread .who::after { content: " ●"; color: var(--lose); }
+  button.item.unread .sub { color: var(--text); font-weight: 600; }
+  .thread-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .thread-head .who { font-weight: 700; }
+  .thread-head .meta { color: var(--muted); font-size: .8rem; }
+  .thread-list { height: 50vh; background: var(--bg); border-radius: 10px; }
+  .gift { display: flex; gap: 8px; margin-top: 8px; }
+  .gift input { width: 140px; }
+</style>
+</head>
+<body>
+<main class="admin">
+  <header class="top">
+    <h1>Lucky Spin Owner</h1>
+    <a href="./" class="link">Back to game</a>
+  </header>
+
+  <section id="notReady" class="card">
+    <p class="hint">The owner tools are not switched on yet. They need the Firebase settings in <code>chat-config.js</code>.</p>
+  </section>
+
+  <section id="login" class="card" hidden>
+    <h2>Owner sign-in</h2>
+    <form id="loginForm">
+      <label class="field">Email
+        <input id="loginEmail" type="email" autocomplete="username" autocapitalize="off" required>
+      </label>
+      <label class="field">Password
+        <input id="loginPass" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="primary" type="submit">Sign in</button>
+    </form>
+    <p id="loginMsg" class="status err" role="status"></p>
+  </section>
+
+  <section id="dash" class="card" hidden>
+    <div class="tabs" role="tablist">
+      <button id="tabPlayers" class="tab" role="tab" type="button" aria-selected="true">Players</button>
+      <button id="tabInbox" class="tab" role="tab" type="button" aria-selected="false">Inbox <span id="inboxCount" class="count" hidden></span></button>
+    </div>
+
+    <div id="playersView">
+      <input id="search" class="search" type="search" placeholder="Search by name or ID number" aria-label="Search players">
+      <ul id="playerList" class="items"></ul>
+    </div>
+
+    <div id="inboxView" hidden>
+      <ul id="chatIndex" class="items"></ul>
+      <div id="thread" hidden>
+        <div class="thread-head">
+          <button id="backToInbox" class="secondary small" type="button">← Back</button>
+          <div><div id="threadName" class="who"></div><div id="threadMeta" class="meta"></div></div>
+        </div>
+        <div id="threadList" class="chat-list thread-list"></div>
+        <form id="replyForm" class="chat-form" style="padding:10px 0 0;border:0">
+          <label class="attach" title="Send a photo">📷<input id="replyPhoto" type="file" accept="image/*" hidden></label>
+          <input id="replyInput" maxlength="500" placeholder="Reply…" autocomplete="off" aria-label="Reply">
+          <button class="primary" type="submit">Send</button>
+        </form>
+        <form id="threadGift" class="gift">
+          <input id="threadGiftAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
+          <button class="secondary" type="submit">🎁 Give Nu</button>
+        </form>
+        <p id="threadMsg" class="status" role="status"></p>
+      </div>
+    </div>
+
+    <p style="margin:16px 0 0"><button id="signOut" class="secondary small" type="button">Sign out</button></p>
+  </section>
+</main>
+<script src="chat-config.js"></script>
+<script type="module" src="admin.js"></script>
+</body>
+</html>

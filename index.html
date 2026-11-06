@@ -9,13 +9,22 @@
 <body>
 <main class="app">
   <header class="top">
-    <h1>Lucky Spin</h1>
+    <div class="brand">
+      <button id="menuBtn" class="icon-btn has-dot" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰<span class="unread-dot" hidden aria-label="New message"></span></button>
+      <h1>Lucky Spin</h1>
+    </div>
     <div class="stats">
-      <div class="stat"><span class="label">Coins</span><span id="coins" class="value">0</span></div>
-      <div class="stat"><span class="label">Best</span><span id="best" class="value">0</span></div>
+      <div class="stat"><span class="label">Balance</span><span id="nu" class="value">Nu 0</span></div>
+      <div class="stat"><span class="label">Best</span><span id="best" class="value">Nu 0</span></div>
       <div class="stat"><span class="label">Spins</span><span id="spins" class="value">0</span></div>
     </div>
   </header>
+
+  <div class="profile">
+    <span>👤 <strong id="playerName"></strong></span>
+    <button id="editName" class="secondary small" type="button">✏️ Edit name</button>
+    <span class="pid">Your ID: <strong id="playerId"></strong></span>
+  </div>
 
   <section class="stage">
     <div class="wheel-wrap">
@@ -23,19 +32,21 @@
       <canvas id="wheel" width="600" height="600" aria-label="Prize wheel"></canvas>
       <button id="spin" class="hub" type="button">SPIN</button>
     </div>
-    <p id="message" class="message" role="status" aria-live="polite">Each spin costs 10 coins. Good luck!</p>
+    <p id="message" class="message" role="status" aria-live="polite">Pick a bet and spin. Good luck!</p>
     <div class="controls">
       <label class="bet">
         Bet
         <select id="bet">
-          <option value="10">10</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
+          <option value="20">Nu 20</option>
+          <option value="50">Nu 50</option>
+          <option value="100">Nu 100</option>
         </select>
       </label>
-      <button id="reset" class="secondary" type="button">New game</button>
       <button id="sound" class="secondary" type="button" aria-pressed="true">Sound: on</button>
+    </div>
+    <div class="bonus">
+      <div class="bonus-text">🎁 <span id="bonusText"></span></div>
+      <div class="bonus-bar"><div id="bonusFill"></div></div>
     </div>
   </section>
 
@@ -46,7 +57,73 @@
     <ol id="history" class="history"></ol>
   </section>
 </main>
+
+<!-- menu -->
+<div id="menuBackdrop" class="backdrop" hidden></div>
+<nav id="menu" class="drawer" aria-label="Menu" hidden>
+  <div class="drawer-head">
+    <strong>Menu</strong>
+    <button id="menuClose" class="icon-btn" type="button" aria-label="Close menu">✕</button>
+  </div>
+  <button class="drawer-item" type="button" data-action="contact">💬 Contact us <span class="unread-dot inline" hidden aria-label="New message"></span></button>
+  <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
+</nav>
+
+<!-- dialogs -->
+<dialog id="nameDialog" class="dialog">
+  <form method="dialog" id="nameForm">
+    <h2>Your name</h2>
+    <p class="hint">This is the name the owner sees.</p>
+    <input id="nameInput" maxlength="20" autocomplete="nickname" required aria-label="Your name">
+    <p id="nameMsg" class="form-msg"></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate class="secondary" type="submit">Cancel</button>
+      <button value="save" class="primary" type="submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="rechargeDialog" class="dialog">
+  <form method="dialog" id="rechargeForm" novalidate>
+    <h2>Recharge Nu</h2>
+    <p class="hint">Send a recharge request to the owner. The minimum recharge is <strong>Nu 100</strong>. The Nu are added to your balance once the owner approves it.</p>
+    <label class="field">Amount (Nu)
+      <input id="rechargeAmount" type="number" inputmode="numeric" min="100" step="1" value="100">
+    </label>
+    <p id="rechargeMsg" class="form-msg"></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate class="secondary" type="submit">Cancel</button>
+      <button value="send" class="primary" type="submit">Send request</button>
+    </div>
+  </form>
+</dialog>
+
+
+<dialog id="infoDialog" class="dialog">
+  <h2 id="infoTitle"></h2>
+  <p id="infoText" class="hint"></p>
+  <form method="dialog" class="row end"><button class="primary" type="submit">OK</button></form>
+</dialog>
+
+<!-- chat -->
+<section id="chatPanel" class="chat-panel" aria-label="Contact us" hidden>
+  <header class="chat-head">
+    <strong>💬 Contact us</strong>
+    <button id="chatClose" class="icon-btn" type="button" aria-label="Close chat">✕</button>
+  </header>
+  <div id="chatList" class="chat-list" aria-live="polite"></div>
+  <p id="chatNote" class="chat-note" hidden></p>
+  <form id="chatForm" class="chat-form">
+    <label class="attach" title="Send a photo">📷<input id="chatPhoto" type="file" accept="image/*" hidden disabled></label>
+    <input id="chatInput" maxlength="500" placeholder="Type a message…" autocomplete="off" aria-label="Message" disabled>
+    <button class="primary" type="submit" disabled>Send</button>
+  </form>
+</section>
+<div id="lightbox" class="lightbox" hidden><img alt="Photo"></div>
+
 <canvas id="confetti" aria-hidden="true"></canvas>
 <script src="game.js"></script>
+<script src="chat-config.js"></script>
+<script type="module" src="online.js"></script>
 </body>
 </html>

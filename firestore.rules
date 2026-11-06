@@ -1,0 +1,67 @@
+rules_version = '2';
+// Security rules for Lucky Spin's online features. Paste into the Firebase console:
+// Firestore Database > Rules, then Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'eL6ulQJzvvSFt1flDcdM7FMsYUJ2';
+    }
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function optString(data, key, max) {
+      return !(key in data) || (data[key] is string && data[key].size() <= max);
+    }
+
+    // Player ID numbers: ids/{6-digit number} -> { uid }. A number can be claimed
+    // only if nobody has it yet (creating an existing document counts as an update).
+    match /ids/{idNumber} {
+      allow read: if isAdmin();
+      allow create: if request.auth != null
+        && idNumber.matches('^[1-9][0-9]{5}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Each player's profile, shared with the owner: players/{player's auth uid}
+    match /players/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['name', 'playerId', 'nu', 'spins', 'updatedAt'])
+        && optString(request.resource.data, 'name', 20)
+        && optString(request.resource.data, 'playerId', 12);
+
+      // Nu sent by the owner. Only the owner can create them; the player removes each one once added.
+      match /grants/{grantId} {
+        allow read, delete: if isAdmin() || isOwner(uid);
+        allow create: if isAdmin()
+          && request.resource.data.keys().hasOnly(['amount', 'createdAt'])
+          && request.resource.data.amount is int
+          && request.resource.data.amount > 0
+          && request.resource.data.amount <= 1000000000;
+      }
+    }
+
+    // One chat per player: chats/{player's auth uid}
+    match /chats/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create, update: if (isAdmin() || isOwner(uid))
+        && request.resource.data.keys().hasOnly(['playerId', 'name', 'lastMessage', 'updatedAt', 'unread', 'playerUnread'])
+        && optString(request.resource.data, 'lastMessage', 200)
+        && optString(request.resource.data, 'playerId', 12)
+        && optString(request.resource.data, 'name', 20);
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || isOwner(uid);
+        allow create: if ((isAdmin() && request.resource.data.from == 'admin')
+                          || (isOwner(uid) && request.resource.data.from == 'player'))
+          && request.resource.data.keys().hasOnly(['from', 'text', 'image', 'createdAt'])
+          && optString(request.resource.data, 'text', 500)
+          && optString(request.resource.data, 'image', 950000)
+          && (('text' in request.resource.data && request.resource.data.text.size() > 0)
+              || 'image' in request.resource.data)
+          && request.resource.data.createdAt == request.time;
+      }
+    }
+  }
+}
