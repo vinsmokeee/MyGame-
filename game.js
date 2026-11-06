@@ -440,7 +440,7 @@
       const b = document.createElement('strong');
       b.textContent = `${fmtNu(bet)} bet`;
       // non-breaking spaces keep each amount ("Nu 12,500") on one line
-      li.append(b, ` = ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
+      li.append(b, ` = Prize ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
       list.append(li);
     }
     const dlg = $('prizeNoteDialog');
