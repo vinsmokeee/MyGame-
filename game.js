@@ -398,6 +398,12 @@
     setMenu(false);
     if (action === 'contact') {
       if (window.LuckyChat) window.LuckyChat.open(); else chatUnavailable();
+    } else if (action === 'note') {
+      // Same content as the welcome pop-up and prize note, any time from the menu.
+      $('noteId').textContent = state.playerId;
+      $('noteWelcomeList').innerHTML = $('welcomeList').innerHTML;
+      fillPrizeLines($('notePrizeList'));
+      $('noteDialog').showModal();
     } else if (action === 'recharge') {
       $('rechargeMsg').textContent = '';
       $('rechargeDialog').showModal();
@@ -430,8 +436,7 @@
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
   // Prize note: what the three big slices pay at each bet (same formula the wheel uses).
-  function showPrizeNote() {
-    const list = $('prizeNoteList');
+  function fillPrizeLines(list) {
     list.replaceChildren();
     const bigs = SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full);
     for (const opt of betSel.options) {
@@ -443,6 +448,9 @@
       li.append(b, ` = Prize ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
       list.append(li);
     }
+  }
+  function showPrizeNote() {
+    fillPrizeLines($('prizeNoteList'));
     const dlg = $('prizeNoteDialog');
     state.prizeNoteSeen = true; // shown once per player
     save();

@@ -173,6 +173,9 @@ a.link { color: var(--accent); }
 .prize-note-list li:last-child { color: var(--accent); font-weight: 700; }
 .legend .legend-big { color: var(--accent); font-weight: 700; }
 
+.note-all h3 { text-align: left; font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 8px; }
+.note-all .prize-note-list, .note-all .hint { text-align: left; }
+
 /* ---------- chat ---------- */
 .has-dot { position: relative; }
 .unread-dot {
