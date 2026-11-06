@@ -420,7 +420,7 @@
     }
     if (!window.LuckyChat) { $('rechargeDialog').close(); chatUnavailable(); return; }
     try {
-      await window.LuckyChat.send(`💰 Recharge request: ${fmtNu(amount)}`);
+      await window.LuckyChat.send(`Requested ${fmtNu(amount)}`);
       $('rechargeDialog').close();
       window.LuckyChat.open();
       setMessage(`Recharge request for ${fmtNu(amount)} sent to the owner.`, 'win');
