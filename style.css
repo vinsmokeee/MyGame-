@@ -167,6 +167,15 @@ a.link { color: var(--accent); }
 .welcome-bye { font-weight: 800; font-size: 1.1rem; color: var(--accent); margin: 0 0 4px; }
 .welcome .row.end { justify-content: center; }
 
+.prize-note h2 { color: var(--accent); font-size: 1.3rem; }
+.prize-note { padding: 20px 14px; }
+.prize-table { width: 100%; border-collapse: collapse; margin: 4px 0 12px; font-size: .88rem; table-layout: auto; }
+.prize-table th { color: var(--muted); font-weight: 600; font-size: .75rem; text-align: right; padding: 6px 3px; border-bottom: 1px solid var(--border); }
+.prize-table td { text-align: right; padding: 9px 3px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.prize-table th:first-child, .prize-table td:first-child { text-align: left; }
+.prize-table td:first-child { font-weight: 700; }
+.prize-table tr:last-child td { color: var(--accent); font-weight: 800; }
+
 /* ---------- chat ---------- */
 .has-dot { position: relative; }
 .unread-dot {
@@ -212,4 +221,11 @@ a.link { color: var(--accent); }
   .stats { width: 100%; }
   .stat { flex: 1; min-width: 0; padding: 8px 6px; }
   .stat .value { font-size: 1rem; }
+}
+
+@media (max-width: 380px) {
+  .prize-note { padding: 18px 10px; }
+  .prize-table { font-size: .76rem; }
+  .prize-table th { font-size: .68rem; }
+  .prize-table td, .prize-table th { padding-left: 2px; padding-right: 2px; }
 }

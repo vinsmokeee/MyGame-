@@ -430,6 +430,28 @@
   });
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
+  // Prize table: what the three big slices pay at each bet (from the same formula the wheel uses).
+  function showPrizeNote() {
+    const body = $('prizeTableBody');
+    body.replaceChildren();
+    const bigs = ['big', 'mega', 'jackpot'].map((k) => SEGMENTS.find((x) => x[k]));
+    for (const opt of betSel.options) {
+      const bet = Number(opt.value);
+      const tr = document.createElement('tr');
+      for (const text of [fmtNu(bet), ...bigs.map((seg) => fmtNu(bigPrize(seg, bet)))]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.append(td);
+      }
+      body.append(tr);
+    }
+    const dlg = $('prizeNoteDialog');
+    state.prizeNoteSeen = true; // shown once per player
+    save();
+    dlg.showModal();
+  }
+  $('welcomeDialog').addEventListener('close', showPrizeNote);
+
   function startSignup() {
     const dlg = $('signupDialog');
     if (!/^Player \d{4}$/.test(state.name)) $('signupName').value = state.name;
@@ -523,4 +545,5 @@
   render();
   save();
   if (!state.gender) startSignup();
+  else if (!state.prizeNoteSeen) showPrizeNote();
 })();
