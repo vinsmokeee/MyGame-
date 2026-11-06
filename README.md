@@ -26,3 +26,10 @@ public key, so nobody else can create valid codes. If the admin key is lost or l
 page and replace `PUBLIC_KEY` in `coin-codes.js` with the new public key.
 
 Note: progress lives in each player's browser, so this is a fun-game safeguard, not bank-grade security.
+
+## In-game chat
+Players tap **💬 Chat** to message the owner; the owner reads and replies from the **Inbox** on `admin.html` and can
+send coins straight into a chat (the player taps **Redeem coins**). Messages are stored in the owner's Firebase
+project. Setup: create a Firebase project, enable Anonymous and Email/Password sign-in, add an admin user, create a
+Firestore database, publish `firestore.rules` (with `ADMIN_UID` replaced by the admin's User UID), and fill in
+`chat-config.js`. Until `chat-config.js` is filled in, the chat button stays hidden.

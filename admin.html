@@ -18,6 +18,23 @@
   .status.ok { color: var(--win); }
   .status.err { color: var(--lose); }
   [hidden] { display: none !important; }
+  .count { background: var(--lose); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: .8rem; margin-left: 6px; }
+  .chat-index { list-style: none; margin: 0; padding: 0; }
+  .chat-index li button {
+    width: 100%; text-align: left; background: var(--bg); color: var(--text); border: 1px solid #2d2759;
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font: inherit; cursor: pointer;
+    display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+  }
+  .chat-index .who { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .06em; }
+  .chat-index .when { color: var(--muted); font-size: .8rem; }
+  .chat-index .last { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat-index .unread .who::after { content: " ●"; color: var(--lose); }
+  .chat-index .unread .last { color: var(--text); font-weight: 600; }
+  .thread-head { align-items: center; margin-bottom: 8px; }
+  .thread-head strong { font-family: ui-monospace, Menlo, monospace; letter-spacing: .06em; }
+  .thread-list { height: 50vh; background: var(--bg); border-radius: 10px; }
+  #thread .chat-form { padding: 10px 0 0; border: 0; }
+  #coinForm input { max-width: 120px; }
 </style>
 </head>
 <body>
@@ -26,6 +43,40 @@
     <h1>Lucky Spin Admin</h1>
     <a href="./" class="link">Back to game</a>
   </header>
+
+  <section id="inbox" class="card">
+    <h2>Inbox <span id="inboxCount" class="count" hidden></span></h2>
+    <p id="inboxNote">Chat isn't switched on yet.</p>
+    <form id="loginForm" hidden>
+      <label class="field">Admin email
+        <input id="loginEmail" type="email" autocomplete="username" autocapitalize="off">
+      </label>
+      <label class="field">Password
+        <input id="loginPass" type="password" autocomplete="current-password">
+      </label>
+      <div class="row"><button class="primary" type="submit">Sign in</button></div>
+    </form>
+    <div id="inboxBody" hidden>
+      <ul id="chatIndex" class="chat-index"></ul>
+      <div id="thread" hidden>
+        <div class="row thread-head">
+          <button id="backToInbox" class="secondary small" type="button">← All chats</button>
+          <strong id="threadTitle"></strong>
+        </div>
+        <div id="threadList" class="chat-list thread-list"></div>
+        <form id="replyForm" class="chat-form">
+          <input id="replyInput" maxlength="500" placeholder="Reply…" autocomplete="off" aria-label="Reply">
+          <button class="primary" type="submit">Send</button>
+        </form>
+        <form id="coinForm" class="chat-form">
+          <input id="coinAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Coins to send">
+          <button class="secondary" type="submit">🎁 Send coins</button>
+        </form>
+        <p id="threadMsg" class="status" role="status"></p>
+      </div>
+      <div class="row" style="margin-top:12px"><button id="signOut" class="secondary small" type="button">Sign out of inbox</button></div>
+    </div>
+  </section>
 
   <section id="setup" class="card">
     <h2>Unlock admin</h2>
@@ -75,6 +126,7 @@
   </section>
 </main>
 <script src="coin-codes.js"></script>
+<script src="chat-config.js"></script>
 <script>
 (() => {
   'use strict';
@@ -141,9 +193,16 @@
     $('newKeyOut').hidden = false;
   });
 
+  // Lets the inbox (admin-chat.js) make coin codes with the unlocked key.
+  window.AdminCoins = {
+    ready: () => !!adminJwk,
+    make: (pid, amount) => CoinCodes.createCode(adminJwk, pid, amount),
+  };
+
   const saved = get();
   if (saved) { try { unlock(saved, false); } catch (e) { status($('setupMsg'), e.message, false); } }
 })();
 </script>
+<script type="module" src="admin-chat.js"></script>
 </body>
 </html>

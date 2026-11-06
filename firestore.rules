@@ -1,0 +1,35 @@
+rules_version = '2';
+// Security rules for the in-game chat. Paste into Firebase console:
+// Firestore Database > Rules. Replace ADMIN_UID with your admin account's User UID.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == 'ADMIN_UID';
+    }
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // One chat per player: chats/{player's auth uid}
+    match /chats/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create, update: if (isAdmin() || isOwner(uid))
+        && request.resource.data.keys().hasOnly(['playerId', 'lastMessage', 'updatedAt', 'unread', 'playerUnread'])
+        && (!('lastMessage' in request.resource.data) || (request.resource.data.lastMessage is string
+            && request.resource.data.lastMessage.size() <= 200))
+        && (!('playerId' in request.resource.data) || (request.resource.data.playerId is string
+            && request.resource.data.playerId.size() <= 12));
+
+      match /messages/{messageId} {
+        allow read: if isAdmin() || isOwner(uid);
+        allow create: if ((isAdmin() && request.resource.data.from == 'admin')
+                          || (isOwner(uid) && request.resource.data.from == 'player'))
+          && request.resource.data.keys().hasOnly(['from', 'text', 'createdAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAt == request.time;
+      }
+    }
+  }
+}

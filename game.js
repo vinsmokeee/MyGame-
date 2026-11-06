@@ -343,12 +343,11 @@
     catch (_) { btn.textContent = 'Copy failed'; }
     setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
   });
-  $('redeemForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (spinning) { redeemStatus('Wait for the wheel to stop first.', false); return; }
-    const input = $('codeInput');
+  // Returns true if the code was redeemed. Shows the outcome in the game.
+  async function redeemCode(code) {
+    if (spinning) { setMessage('Wait for the wheel to stop, then redeem.', 'lose'); redeemStatus('Wait for the wheel to stop first.', false); return false; }
     try {
-      const { amount, nonce } = await CoinCodes.verify(input.value, state.playerId);
+      const { amount, nonce } = await CoinCodes.verify(code, state.playerId);
       if (state.redeemed.includes(nonce)) throw new Error('This code has already been used.');
       state.redeemed.push(nonce);
       state.coins += amount;
@@ -357,16 +356,33 @@
       state.history = state.history.slice(0, 30);
       save();
       render();
-      input.value = '';
       redeemStatus(`You received ${amount.toLocaleString()} coins!`, true);
       setMessage(`Gift received: +${amount.toLocaleString()} coins!`, 'win');
       ensureAudio();
       chime([523, 659, 784, 1047]);
       confetti(120);
+      return true;
     } catch (err) {
       redeemStatus(err.message, false);
+      setMessage(err.message, 'lose');
+      return false;
     }
+  }
+  $('redeemForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('codeInput');
+    if (await redeemCode(input.value)) input.value = '';
   });
+
+  // Used by the chat (chat.js).
+  window.LuckySpin = {
+    get playerId() { return state.playerId; },
+    redeemCode,
+    isRedeemed(code) {
+      const nonce = String(code).split('.')[3];
+      return !!nonce && state.redeemed.includes(nonce);
+    },
+  };
 
   buildLegend();
   drawWheel();
