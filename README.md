@@ -23,7 +23,7 @@ Sign in with the owner's Firebase email/password to:
 ## Online setup (Firebase, free plan)
 Chat, gifts and the player list use Firebase:
 1. Create a Firebase project; enable **Anonymous** and **Email/Password** sign-in; add the owner as a user.
-2. Create a **Firestore** database, then publish `firestore.rules` with `ADMIN_UID` replaced by the owner's User UID.
+2. Create a **Firestore** database, then publish `firestore.rules` (the owner's User UID is in `isAdmin()`).
 3. Fill in `chat-config.js` with the web app config and `adminUid`.
 
 Until `chat-config.js` is filled in, Contact us shows a "not available yet" note and the game works offline.
