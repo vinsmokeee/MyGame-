@@ -176,6 +176,15 @@ a.link { color: var(--accent); }
 .note-all h3 { text-align: left; font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 14px 0 8px; }
 .note-all .prize-note-list, .note-all .hint { text-align: left; }
 
+.account .field { margin-bottom: 4px; }
+.account .field input { margin-bottom: 8px; }
+.seg-tabs { display: flex; gap: 6px; background: var(--bg); border-radius: 10px; padding: 4px; margin: 4px 0 14px; }
+.seg-tab { flex: 1; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 700; padding: 9px; border-radius: 8px; cursor: pointer; }
+.seg-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.field-hint { color: var(--muted); font-size: .78rem; margin: -4px 0 10px; }
+.field-hint.center { text-align: center; margin: 12px 0 0; }
+button.wide { width: 100%; padding: 12px; margin-top: 4px; }
+
 /* ---------- chat ---------- */
 .has-dot { position: relative; }
 .unread-dot {

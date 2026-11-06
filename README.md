@@ -9,7 +9,9 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
   prizes pay in full at a Nu 100 bet (smaller share at lower bets): **Nu 1,000** (1 in 200), **Nu 10,000** (1 in 2,500)
   and the **Jackpot Nu 50,000** (1 in 20,000); ×5 is 1 in 30. Over time players get back about 88% of Nu 50/100 bets.
   Tune `p` in `SEGMENTS` in `game.js`.
-- New players enter their name and gender, then see a welcome pop-up with their ID.
+- Players create an account (username, password, gender) or log in. Their progress (Nu, ID, history, chat)
+  is saved to Firebase, so they can log in from any phone. ☰ Menu → Log out. New accounts then see a welcome
+  pop-up with their ID and the prize note. (Usernames are stored as `username@players.luckyspin.app` logins.)
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 50** bonus.
 - Players can set their own name (✏️ Edit name).

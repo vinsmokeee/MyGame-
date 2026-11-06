@@ -67,6 +67,10 @@
   function load() {
     let s = null;
     try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (_) { /* storage unavailable */ }
+    return normalize(s);
+  }
+  // Fills in anything missing; a brand-new player starts with the Nu 200 welcome gift.
+  function normalize(s) {
     const fresh = !s || typeof s !== 'object';
     if (fresh) s = {};
     if (!Number.isFinite(s.nu)) s.nu = Number.isFinite(s.coins) ? s.coins : START_NU; // older saves used "coins"
@@ -404,6 +408,8 @@
       $('noteWelcomeList').innerHTML = $('welcomeList').innerHTML;
       fillPrizeLines($('notePrizeList'));
       $('noteDialog').showModal();
+    } else if (action === 'logout') {
+      if (window.LuckyAccount) window.LuckyAccount.logout();
     } else if (action === 'recharge') {
       $('rechargeMsg').textContent = '';
       $('rechargeDialog').showModal();
@@ -480,6 +486,9 @@
   });
 
   $('editName').addEventListener('click', () => {
+    $('nameHint').textContent = state.username
+      ? `This changes the name the team sees. You still log in with your username: ${state.username}`
+      : 'This is the name the team sees.';
     $('nameInput').value = state.name;
     $('nameMsg').textContent = '';
     $('nameDialog').showModal();
@@ -516,7 +525,47 @@
   });
 
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
+  // Fields saved to the player's online account (so they can log in on any phone).
+  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'history', 'grants', 'prizeNoteSeen'];
+  function refreshAll() {
+    save();
+    buildLegend();
+    drawWheel();
+    render();
+  }
+
   window.LuckySpin = {
+    // ----- accounts (used by online.js) -----
+    get localOwner() { return state.uid || null; },
+    get prizeNoteSeen() { return !!state.prizeNoteSeen; },
+    exportState() {
+      const out = {};
+      for (const k of ACCOUNT_FIELDS) if (state[k] !== undefined) out[k] = state[k];
+      return out;
+    },
+    // Load a player's saved account into the game.
+    importState(data, owner) {
+      const s = {};
+      for (const k of ACCOUNT_FIELDS) if (data[k] !== undefined) s[k] = data[k];
+      state = normalize(s);
+      state.uid = owner;
+      state.idOwner = owner;
+      refreshAll();
+    },
+    // A new account: fresh start with the Nu 200 welcome gift.
+    startFresh({ username, gender, owner }) {
+      state = normalize(null);
+      Object.assign(state, { name: username, username, gender, uid: owner });
+      refreshAll();
+    },
+    // Turn this phone's existing progress into an account (keeps Nu, ID and history).
+    adopt({ username, gender, owner }) {
+      Object.assign(state, { name: username, username, gender, uid: owner });
+      refreshAll();
+    },
+    clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
+    showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
+    showPrizeNote,
     get playerId() { return state.playerId; },
     // Which online account has confirmed this ID number as its own.
     get idOwner() { return state.idOwner || null; },
@@ -550,6 +599,9 @@
   drawWheel();
   render();
   save();
-  if (!state.gender) startSignup();
-  else if (!state.prizeNoteSeen) showPrizeNote();
+  // With online accounts, online.js shows the log-in / create-account pop-up instead.
+  if (!(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase)) {
+    if (!state.gender) startSignup();
+    else if (!state.prizeNoteSeen) showPrizeNote();
+  }
 })();
