@@ -4,9 +4,11 @@ A browser prize-wheel game played with **Nu** (play points). Open `index.html` i
 https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is needed.
 
 ## How to play
-- Players start with Nu 100, pick a bet (Nu 10/25/50/100) and press **SPIN** (or Space).
-- The wheel pays a multiple of the bet (×0.5 to ×5), plus two fixed prizes on any bet: **Nu 10,000** (about 1 in 650 spins)
-  and the **Jackpot, Nu 50,000** (about 1 in 7,000 spins). Change `oneIn` in `game.js` to adjust them.
+- Players start with Nu 200, pick a bet (Nu 20/50/100) and press **SPIN** (or Space).
+- About 1 spin in 3 wins (×1.5, ×2, ×3, ×5) and 1 in 10 gives the bet back; over time players get back a bit
+  less than they bet. Two big prizes pay in full at a Nu 100 bet, with a smaller share at lower bets:
+  **Mega Nu 10,000** (about 1 in 650 spins) and the **Jackpot Nu 50,000** (about 1 in 7,000 spins).
+  Tune `SEGMENTS` / `oneIn` in `game.js`.
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 50** bonus.
 - Players can set their own name (✏️ Edit name).

@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  const START_NU = 100;
+  const START_NU = 200;
+  const MAX_BET = 100;      // the big prizes pay in full at this bet
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
   const BONUS_EVERY = 10;   // spins
@@ -10,24 +11,32 @@
 
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
 
-  // mult = payout as a multiple of the bet; prize = fixed payout on any bet.
-  // weight = relative chance; oneIn = exact rarity (e.g. 1 in 7000 spins), which
-  // is turned into a weight below. The big prizes are far rarer than their slices look.
+  // mult = payout as a multiple of the bet. full = big prize paid in full at a Nu 100 bet;
+  // smaller bets win a smaller share (see bigPrize). weight = relative chance; oneIn = exact
+  // rarity (e.g. 1 in 7000 spins), turned into a weight below. Tuned so about 1 spin in 3
+  // wins, 1 in 10 gives the bet back, and over time players get back a bit less than they bet.
   const SEGMENTS = [
-    { label: 'x2',      mult: 2,   weight: 12,   color: '#f97316' },
-    { label: 'LOSE',    mult: 0,   weight: 22,   color: '#334155' },
-    { label: 'x1',      mult: 1,   weight: 16,   color: '#0ea5e9' },
-    { label: 'x3',      mult: 3,   weight: 6,    color: '#a855f7' },
-    { label: 'LOSE',    mult: 0,   weight: 22,   color: '#475569' },
-    { label: 'x0.5',    mult: 0.5, weight: 16,   color: '#14b8a6' },
-    { label: 'NU 10K',  prize: 10000, oneIn: 650, color: '#7f1d1d', mega: true },
-    { label: 'x5',      mult: 5,   weight: 3,    color: '#ec4899' },
-    { label: 'LOSE',    mult: 0,   weight: 22,   color: '#334155' },
-    { label: 'x1',      mult: 1,   weight: 16,   color: '#22c55e' },
-    { label: 'x2',      mult: 2,   weight: 12,   color: '#ef4444' },
-    { label: 'x0.5',    mult: 0.5, weight: 16,   color: '#06b6d4' },
-    { label: 'JACKPOT', prize: 50000, oneIn: 7000, color: '#eab308', jackpot: true },
+    { label: 'x1.5',    mult: 1.5, weight: 73,  color: '#0ea5e9' },
+    { label: 'LOSE',    mult: 0,   weight: 109, color: '#334155' },
+    { label: 'x2',      mult: 2,   weight: 35,  color: '#f97316' },
+    { label: 'x1',      mult: 1,   weight: 60,  color: '#22c55e' },
+    { label: 'LOSE',    mult: 0,   weight: 109, color: '#475569' },
+    { label: 'x1.5',    mult: 1.5, weight: 73,  color: '#0ea5e9' },
+    { label: 'NU 10K',  full: 10000, oneIn: 650, color: '#7f1d1d', mega: true },
+    { label: 'LOSE',    mult: 0,   weight: 109, color: '#334155' },
+    { label: 'x3',      mult: 3,   weight: 20,  color: '#a855f7' },
+    { label: 'x1.5',    mult: 1.5, weight: 74,  color: '#0ea5e9' },
+    { label: 'LOSE',    mult: 0,   weight: 109, color: '#475569' },
+    { label: 'x2',      mult: 2,   weight: 35,  color: '#f97316' },
+    { label: 'x1',      mult: 1,   weight: 60,  color: '#22c55e' },
+    { label: 'LOSE',    mult: 0,   weight: 108, color: '#334155' },
+    { label: 'x5',      mult: 5,   weight: 6,   color: '#ec4899' },
+    { label: 'JACKPOT', full: 50000, oneIn: 7000, color: '#eab308', jackpot: true },
   ];
+  // Big prize for a bet: full at Nu 100, e.g. Nu 12,500 / 2,500 at Nu 50, Nu 2,000 / 400 at Nu 20.
+  const bigPrize = (seg, bet) => Math.round(seg.full * Math.min(1, bet / MAX_BET) ** 2);
+  const shortNu = (n) => (n >= 1000 ? `${+(n / 1000).toFixed(1)}K` : String(n));
+  const segLabel = (seg) => (seg.mega ? `NU ${shortNu(bigPrize(seg, Number(betSel.value)))}` : seg.label);
   const N = SEGMENTS.length;
   const ARC = (Math.PI * 2) / N;
   (() => {
@@ -120,7 +129,7 @@
       ctx.font = `800 ${seg.jackpot || seg.mega ? 24 : 30}px system-ui, sans-serif`;
       ctx.shadowColor = 'rgba(0,0,0,.5)';
       ctx.shadowBlur = 4;
-      ctx.fillText(seg.label, r - 20, 0);
+      ctx.fillText(segLabel(seg), r - 20, 0);
       ctx.restore();
     }
 
@@ -198,10 +207,10 @@
 
   function finish(index, bet) {
     const seg = SEGMENTS[index];
-    const payout = seg.prize ? seg.prize : Math.floor(bet * seg.mult);
+    const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
-    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Nu 10,000' : seg.label, net);
+    addHistory(seg.jackpot ? 'Jackpot' : seg.mega ? 'Mega win' : seg.label, net);
     spinning = false;
 
     let text;
@@ -274,22 +283,30 @@
   }
 
   function buildLegend() {
+    const bet = Number(betSel.value);
     const seen = new Map();
-    for (const s of SEGMENTS) if (!seen.has(s.label)) seen.set(s.label, s);
-    const value = (s) => (s.prize ? 1e9 + s.prize : s.mult);
+    for (const seg of SEGMENTS) if (!seen.has(seg.label)) seen.set(seg.label, seg);
+    const value = (seg) => (seg.full ? 1e9 + seg.full : seg.mult);
     const legend = $('legend');
-    [...seen.values()].sort((a, b) => value(b) - value(a)).forEach((s) => {
+    legend.replaceChildren();
+    [...seen.values()].sort((a, b) => value(b) - value(a)).forEach((seg) => {
       const li = document.createElement('li');
       const sw = document.createElement('span');
       sw.className = 'swatch';
-      sw.style.background = s.mega ? '#b91c1c' : s.color;
+      sw.style.background = seg.mega ? '#b91c1c' : seg.color;
       const name = document.createElement('span');
-      name.textContent = s.jackpot ? 'Jackpot: Nu 50,000 (any bet)'
-        : s.mega ? 'Nu 10,000 (any bet)'
-          : s.mult === 0 ? 'Lose bet' : `×${s.mult} bet`;
+      name.textContent = seg.jackpot ? `Jackpot: ${fmtNu(bigPrize(seg, bet))}`
+        : seg.mega ? `Mega: ${fmtNu(bigPrize(seg, bet))}`
+          : seg.mult === 0 ? 'Lose bet' : seg.mult === 1 ? 'Bet back (×1)' : `×${seg.mult} bet`;
       li.append(sw, name);
       legend.append(li);
     });
+    if (bet < MAX_BET) {
+      const li = document.createElement('li');
+      li.className = 'legend-note';
+      li.textContent = `Bet ${fmtNu(MAX_BET)} to win the full Nu 50,000 Jackpot and Nu 10,000 Mega prize.`;
+      legend.append(li);
+    }
   }
 
   // ---------- sound ----------
@@ -422,7 +439,12 @@
 
   // ---------- other events ----------
   spinBtn.addEventListener('click', spin);
-  betSel.addEventListener('change', () => { setMessage(`Each spin costs ${fmtNu(betSel.value)}.`); render(); });
+  betSel.addEventListener('change', () => {
+    setMessage(`Each spin costs ${fmtNu(betSel.value)}.`);
+    buildLegend();
+    drawWheel();
+    render();
+  });
   $('sound').addEventListener('click', (e) => {
     soundOn = !soundOn;
     e.currentTarget.textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
