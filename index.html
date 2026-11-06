@@ -10,7 +10,7 @@
 <main class="app">
   <header class="top">
     <div class="brand">
-      <button id="menuBtn" class="icon-btn" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰</button>
+      <button id="menuBtn" class="icon-btn has-dot" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰<span class="unread-dot" hidden aria-label="New message"></span></button>
       <h1>Lucky Spin</h1>
     </div>
     <div class="stats">
@@ -66,9 +66,8 @@
     <strong>Menu</strong>
     <button id="menuClose" class="icon-btn" type="button" aria-label="Close menu">✕</button>
   </div>
-  <button class="drawer-item" type="button" data-action="contact">💬 Contact us</button>
+  <button class="drawer-item" type="button" data-action="contact">💬 Contact us <span class="unread-dot inline" hidden aria-label="New message"></span></button>
   <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
-  <button class="drawer-item" type="button" data-action="faq">❓ FAQ</button>
 </nav>
 
 <!-- dialogs -->
@@ -100,18 +99,6 @@
   </form>
 </dialog>
 
-<dialog id="faqDialog" class="dialog faq">
-  <h2>FAQ</h2>
-  <details open><summary>How do I play?</summary><p>Pick a bet under the wheel and tap <strong>SPIN</strong>. Where the wheel stops decides your prize.</p></details>
-  <details><summary>What can I win?</summary><p>Each segment multiplies your bet (×0.5 up to the ×20 Jackpot). The rare <strong>Nu 10,000</strong> segment pays Nu 10,000 whatever you bet. LOSE means you lose your bet.</p></details>
-  <details><summary>What is the spin bonus?</summary><p>Every 10 spins you get <strong>Nu 50</strong> free. The bar under the wheel shows how close you are.</p></details>
-  <details><summary>How do I get more Nu?</summary><p>Win on the wheel, collect the spin bonus, or open ☰ Menu → <strong>Recharge Nu</strong> (minimum Nu 100).</p></details>
-  <details><summary>How do I change my name?</summary><p>Tap <strong>✏️ Edit name</strong> next to your name at the top.</p></details>
-  <details><summary>How do I contact the owner?</summary><p>Tap <strong>💬 Chat</strong> or open ☰ Menu → <strong>Contact us</strong>. You can send messages and photos.</p></details>
-  <details><summary>Is my progress saved?</summary><p>Yes, in this browser on this device. Clearing your browser data or switching devices starts a new account.</p></details>
-  <details><summary>Are Nu real money?</summary><p>No. Nu in Lucky Spin are play points for fun only. They have no cash value and can't be withdrawn.</p></details>
-  <form method="dialog" class="row end"><button class="primary" type="submit">Close</button></form>
-</dialog>
 
 <dialog id="infoDialog" class="dialog">
   <h2 id="infoTitle"></h2>
@@ -120,12 +107,9 @@
 </dialog>
 
 <!-- chat -->
-<button id="chatFab" class="chat-fab" type="button" aria-controls="chatPanel" aria-expanded="false" hidden>
-  💬 Chat<span id="chatBadge" class="chat-badge" hidden aria-label="New message"></span>
-</button>
-<section id="chatPanel" class="chat-panel" aria-label="Chat with the owner" hidden>
+<section id="chatPanel" class="chat-panel" aria-label="Contact us" hidden>
   <header class="chat-head">
-    <strong>Message the owner</strong>
+    <strong>💬 Contact us</strong>
     <button id="chatClose" class="icon-btn" type="button" aria-label="Close chat">✕</button>
   </header>
   <div id="chatList" class="chat-list" aria-live="polite"></div>

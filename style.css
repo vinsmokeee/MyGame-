@@ -22,7 +22,6 @@ body {
   color: var(--text);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
-body:has(.chat-fab:not([hidden])) { padding-bottom: 72px; }
 
 .app {
   max-width: 1000px;
@@ -148,24 +147,17 @@ a.link { color: var(--accent); }
 .form-msg { min-height: 1.2em; margin: 6px 0; font-size: .9rem; color: var(--lose); }
 .row { display: flex; flex-wrap: wrap; gap: 10px; }
 .row.end { justify-content: flex-end; margin-top: 8px; }
-.faq details { border-bottom: 1px solid var(--line); padding: 10px 0; }
-.faq summary { cursor: pointer; font-weight: 600; }
-.faq details p { color: var(--muted); margin: 8px 0 0; line-height: 1.45; }
 
 /* ---------- chat ---------- */
-.chat-fab {
-  position: fixed; right: 16px; bottom: 16px; z-index: 20;
-  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px;
-  padding: 12px 18px; font: inherit; font-weight: 800; cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
-}
-.chat-badge {
-  position: absolute; top: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%;
+.has-dot { position: relative; }
+.unread-dot {
+  position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%;
   background: var(--lose); border: 2px solid #fff;
 }
+.unread-dot.inline { position: static; display: inline-block; vertical-align: middle; margin-left: 6px; }
 .chat-panel {
-  position: fixed; right: 16px; bottom: 76px; z-index: 21;
-  width: min(360px, calc(100vw - 32px)); height: min(480px, calc(100vh - 110px));
+  position: fixed; right: 16px; bottom: 16px; z-index: 21;
+  width: min(360px, calc(100vw - 32px)); height: min(520px, calc(100vh - 32px));
   background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 12px 40px rgba(0, 0, 0, .55);

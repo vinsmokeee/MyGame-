@@ -8,7 +8,7 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 - The wheel pays a multiple of the bet (×0.5 to the ×20 Jackpot). The rare **Nu 10,000** segment pays Nu 10,000 on any bet.
 - Every 10 spins gives a free **Nu 50** bonus.
 - Players can set their own name (✏️ Edit name).
-- The ☰ menu has **Contact us** (chat), **Recharge Nu** (sends the owner a request, minimum Nu 100) and **FAQ**.
+- The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.
 
 ## Owner tools (`admin.html`)
@@ -22,7 +22,7 @@ Chat, gifts and the player list use Firebase:
 2. Create a **Firestore** database, then publish `firestore.rules` with `ADMIN_UID` replaced by the owner's User UID.
 3. Fill in `chat-config.js` with the web app config and `adminUid`.
 
-Until `chat-config.js` is filled in, the chat button is hidden and the game works offline.
+Until `chat-config.js` is filled in, Contact us shows a "not available yet" note and the game works offline.
 Photos are shrunk in the browser and stored with the message, so Cloud Storage (a paid feature) is not needed.
 
 ## Files

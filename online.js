@@ -14,14 +14,13 @@ async function start() {
   const auth = fb.getAuth(app);
   const db = fb.getFirestore(app);
 
-  const fab = $('chatFab');
   const panel = $('chatPanel');
   const list = $('chatList');
   const form = $('chatForm');
   const input = $('chatInput');
   const photo = $('chatPhoto');
   const note = $('chatNote');
-  const badge = $('chatBadge');
+  const dots = document.querySelectorAll('.unread-dot');
   const sendBtn = form.querySelector('button');
 
   let uid = null;
@@ -32,19 +31,16 @@ async function start() {
 
   const setNote = (text) => { note.textContent = text; note.hidden = !text; };
   const chatRef = () => fb.doc(db, 'chats', uid);
-  const updateBadge = () => { badge.hidden = !playerUnread || isOpen; };
+  const updateBadge = () => { dots.forEach((d) => { d.hidden = !playerUnread || isOpen; }); };
 
-  fab.hidden = false;
   setNote('Connecting…');
 
   function setOpen(open) {
     isOpen = open;
     panel.hidden = !open;
-    fab.setAttribute('aria-expanded', String(open));
     if (open) { markRead(); list.scrollTop = list.scrollHeight; }
     updateBadge();
   }
-  fab.addEventListener('click', () => setOpen(!isOpen));
   $('chatClose').addEventListener('click', () => setOpen(false));
 
   function markRead() {
@@ -98,7 +94,7 @@ async function start() {
     fb.onSnapshot(
       fb.query(fb.collection(chatRef(), 'messages'), fb.orderBy('createdAt'), fb.limitToLast(100)),
       (snap) => renderMessages(list, snap.docs.map((d) => d.data({ serverTimestamps: 'estimate' })), 'player',
-        'Say hi! The owner will reply here. You can also send photos with 📷.'),
+        'Send us a message and we will reply here. You can also send photos with 📷.'),
       () => setNote('Chat is unavailable right now.'),
     );
     fb.onSnapshot(chatRef(), (snap) => {

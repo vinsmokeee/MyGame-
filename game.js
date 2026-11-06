@@ -375,8 +375,6 @@
     } else if (action === 'recharge') {
       $('rechargeMsg').textContent = '';
       $('rechargeDialog').showModal();
-    } else if (action === 'faq') {
-      $('faqDialog').showModal();
     }
   });
 
