@@ -168,13 +168,10 @@ a.link { color: var(--accent); }
 .welcome .row.end { justify-content: center; }
 
 .prize-note h2 { color: var(--accent); font-size: 1.3rem; }
-.prize-note { padding: 20px 14px; }
-.prize-table { width: 100%; border-collapse: collapse; margin: 4px 0 12px; font-size: .88rem; table-layout: auto; }
-.prize-table th { color: var(--muted); font-weight: 600; font-size: .75rem; text-align: right; padding: 6px 3px; border-bottom: 1px solid var(--border); }
-.prize-table td { text-align: right; padding: 9px 3px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.prize-table th:first-child, .prize-table td:first-child { text-align: left; }
-.prize-table td:first-child { font-weight: 700; }
-.prize-table tr:last-child td { color: var(--accent); font-weight: 800; }
+.prize-note-list { list-style: none; margin: 4px 0 14px; padding: 0; }
+.prize-note-list li { padding: 10px 0; border-bottom: 1px solid var(--line); line-height: 1.4; }
+.prize-note-list li:last-child { color: var(--accent); font-weight: 700; }
+.legend .legend-big { color: var(--accent); font-weight: 700; }
 
 /* ---------- chat ---------- */
 .has-dot { position: relative; }
@@ -223,9 +220,3 @@ a.link { color: var(--accent); }
   .stat .value { font-size: 1rem; }
 }
 
-@media (max-width: 380px) {
-  .prize-note { padding: 18px 10px; }
-  .prize-table { font-size: .76rem; }
-  .prize-table th { font-size: .68rem; }
-  .prize-table td, .prize-table th { padding-left: 2px; padding-right: 2px; }
-}

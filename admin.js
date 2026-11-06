@@ -92,6 +92,7 @@ async function start() {
   }
 
   // ----- giving Nu -----
+  const rechargeText = (amount) => `Recharge of ${fmtNu(amount)} successfully added`;
   async function giveNu(uid, amount) {
     if (!Number.isInteger(amount) || amount < 1 || amount > MAX_GIFT) {
       throw new Error(`Enter a whole number from 1 to ${MAX_GIFT.toLocaleString('en-US')}.`);
@@ -133,7 +134,7 @@ async function start() {
         <div class="sub"></div>
         <form class="actions">
           <input type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
-          <button class="primary small" type="submit">🎁 Give Nu</button>
+          <button class="primary small" type="submit">Add Nu</button>
           <button class="secondary small" type="button" data-chat>💬 Chat</button>
         </form>
         <p class="status" role="status"></p>`;
@@ -145,6 +146,7 @@ async function start() {
         const name = (players.get(uid) || {}).name || 'player';
         try {
           await giveNu(uid, amount);
+          await send({ text: rechargeText(amount) }, rechargeText(amount), uid).catch(() => {});
           status(msg, `Sent ${fmtNu(amount)} to ${name} (ID ${(players.get(uid) || {}).playerId || '?'}).`, true);
         } catch (err) { status(msg, err.message || 'Could not send Nu.', false); }
       });
@@ -220,8 +222,7 @@ async function start() {
   }
   $('backToInbox').addEventListener('click', closeThread);
 
-  async function send(fields, preview) {
-    const uid = current;
+  async function send(fields, preview, uid = current) {
     const chatRef = fb.doc(db, 'chats', uid);
     await fb.addDoc(fb.collection(chatRef, 'messages'), { from: 'admin', ...fields, createdAt: fb.serverTimestamp() });
     const who = playerLabel(uid);
@@ -261,7 +262,7 @@ async function start() {
     const amount = Number($('threadGiftAmount').value);
     try {
       await giveNu(current, amount);
-      await send({ text: `🎁 I sent you ${fmtNu(amount)}!` }, `🎁 Sent ${fmtNu(amount)}`);
+      await send({ text: rechargeText(amount) }, rechargeText(amount));
       status($('threadMsg'), `Sent ${fmtNu(amount)}.`, true);
     } catch (err) { status($('threadMsg'), err.message || 'Could not send Nu.', false); }
   });
