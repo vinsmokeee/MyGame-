@@ -1,10 +1,16 @@
-// Player's online features: chat with the owner (text + photos),
-// Nu gifts from the owner, and sharing name/balance with the owner.
+// Player's online features: accounts (username + password, so progress follows the
+// player to any phone), chat with the team (text + photos), and Nu added by the team.
 import { loadFirebase, compressImage, renderMessages, MAX_TEXT } from './shared.js';
 
 const cfg = window.CHAT_CONFIG;
 const game = window.LuckySpin;
 const $ = (id) => document.getElementById(id);
+
+// Usernames are turned into a login e-mail behind the scenes; players never see it.
+const EMAIL_DOMAIN = '@players.luckyspin.app';
+const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
+const toEmail = (username) => username.trim().toLowerCase() + EMAIL_DOMAIN;
+const fromEmail = (email) => String(email || '').split('@')[0];
 
 if (cfg && cfg.firebase && game) start().catch(() => {});
 
@@ -22,8 +28,10 @@ async function start() {
   const note = $('chatNote');
   const dots = document.querySelectorAll('.unread-dot');
   const sendBtn = form.querySelector('button');
+  const accountDlg = $('accountDialog');
 
-  let uid = null;
+  let uid = null;      // signed-in account
+  let entered = false; // account loaded into the game
   let isOpen = false;
   let playerUnread = false;
   let ready;
@@ -31,9 +39,164 @@ async function start() {
 
   const setNote = (text) => { note.textContent = text; note.hidden = !text; };
   const chatRef = () => fb.doc(db, 'chats', uid);
+  const playerRef = () => fb.doc(db, 'players', uid);
   const updateBadge = () => { dots.forEach((d) => { d.hidden = !playerUnread || isOpen; }); };
 
-  setNote('Connecting…');
+  // ---------- account pop-up ----------
+  accountDlg.addEventListener('cancel', (e) => e.preventDefault()); // must log in or sign up
+  function showTab(which) {
+    $('tabCreate').setAttribute('aria-selected', String(which === 'create'));
+    $('tabLogin').setAttribute('aria-selected', String(which === 'login'));
+    $('createForm').hidden = which !== 'create';
+    $('loginForm').hidden = which !== 'login';
+  }
+  $('tabCreate').addEventListener('click', () => showTab('create'));
+  $('tabLogin').addEventListener('click', () => showTab('login'));
+  function showAccount(tab = 'create', message = '') {
+    showTab(tab);
+    $(tab === 'create' ? 'createMsg' : 'loginMsg').textContent = message;
+    if (!accountDlg.open) accountDlg.showModal();
+  }
+  function busy(formEl, on) {
+    const btn = formEl.querySelector('button[type=submit]');
+    btn.disabled = on;
+    btn.dataset.label = btn.dataset.label || btn.textContent;
+    btn.textContent = on ? 'Please wait…' : btn.dataset.label;
+  }
+
+  $('createForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('createMsg');
+    const username = $('createUser').value.trim();
+    const password = $('createPass').value;
+    const gender = (document.querySelector('input[name="cgender"]:checked') || {}).value;
+    if (!USERNAME_RE.test(username)) { msg.textContent = 'Username must be 3–20 letters, numbers or _ (no spaces).'; return; }
+    if (password.length < 6) { msg.textContent = 'Password must be at least 6 characters.'; return; }
+    if (!gender) { msg.textContent = 'Please choose your gender.'; return; }
+    msg.textContent = '';
+    busy(e.target, true);
+    try {
+      const current = auth.currentUser;
+      let user;
+      if (current && current.isAnonymous) {
+        // Players from the earlier version keep their chat and progress.
+        const cred = fb.EmailAuthProvider.credential(toEmail(username), password);
+        user = (await fb.linkWithCredential(current, cred)).user;
+      } else {
+        user = (await fb.createUserWithEmailAndPassword(auth, toEmail(username), password)).user;
+      }
+      await enter(user, 'created', { username, gender });
+    } catch (err) {
+      const code = err && err.code;
+      msg.textContent = code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use'
+        ? 'That username is taken. Please choose another.'
+        : code === 'auth/weak-password' ? 'Password must be at least 6 characters.'
+          : code === 'auth/network-request-failed' ? 'No internet connection. Please try again.'
+            : 'Could not create the account. Please try again.';
+    } finally {
+      busy(e.target, false);
+    }
+  });
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = $('loginMsg');
+    const username = $('loginUser').value.trim();
+    const password = $('loginPass').value;
+    if (!username || !password) { msg.textContent = 'Enter your username and password.'; return; }
+    if (!USERNAME_RE.test(username)) { msg.textContent = 'Wrong username or password.'; return; }
+    msg.textContent = '';
+    busy(e.target, true);
+    try {
+      const user = (await fb.signInWithEmailAndPassword(auth, toEmail(username), password)).user;
+      await enter(user, 'login');
+    } catch (err) {
+      const code = err && err.code;
+      msg.textContent = code === 'auth/too-many-requests' ? 'Too many tries. Please wait a minute and try again.'
+        : code === 'auth/network-request-failed' ? 'No internet connection. Please try again.'
+          : code === 'load-failed' ? 'Could not load your account. Check your connection and try again.'
+            : 'Wrong username or password.';
+      if (code === 'load-failed') fb.signOut(auth).catch(() => {});
+    } finally {
+      busy(e.target, false);
+    }
+  });
+
+  // ---------- loading an account into the game ----------
+  async function enter(user, mode, extra = {}) {
+    uid = user.uid;
+    if (mode === 'created') {
+      if (game.idOwner === uid) game.adopt({ ...extra, owner: uid }); // earlier anonymous player
+      else game.startFresh({ ...extra, owner: uid });
+    } else {
+      let data = null;
+      try {
+        const snap = await fb.getDoc(playerRef());
+        data = snap.exists() ? snap.data() : null;
+      } catch (_) {
+        uid = null;
+        const err = new Error('load failed');
+        err.code = 'load-failed';
+        throw err;
+      }
+      const localIsMine = game.localOwner === uid;
+      if (data && !(localIsMine && game.spins > (data.spins || 0))) game.importState(data, uid);
+      else if (!localIsMine) game.startFresh({ username: fromEmail(user.email), gender: '', owner: uid });
+      // otherwise this phone has newer progress for this account; it is saved below
+    }
+    entered = true;
+    if (accountDlg.open) accountDlg.close();
+    document.querySelector('[data-action="logout"]').hidden = false;
+    await claimId();
+    await saveNow();
+    startListeners();
+    if (mode === 'created') game.showWelcome();
+    else if (!game.prizeNoteSeen) game.showPrizeNote();
+  }
+
+  // ---------- saving progress to the account ----------
+  let saveTimer = null;
+  function saveNow() {
+    clearTimeout(saveTimer);
+    if (!uid || !entered) return Promise.resolve();
+    return fb.setDoc(playerRef(), { ...game.exportState(), updatedAt: fb.serverTimestamp() }, { merge: true })
+      .catch(() => {});
+  }
+  function saveSoon() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveNow, 1200);
+  }
+  game.onChange(saveSoon);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
+
+  window.LuckyAccount = {
+    async logout() {
+      await saveNow();
+      await fb.signOut(auth).catch(() => {});
+      game.clearLocal();
+      location.reload();
+    },
+  };
+
+  // Reserve this player's ID number in ids/{number} so no two players share one.
+  // The database only allows creating an ID that nobody has yet; if it is taken,
+  // pick a new number and try again.
+  async function claimId() {
+    if (game.idOwner === uid) return;
+    for (let tries = 0; tries < 8; tries++) {
+      try {
+        await fb.setDoc(fb.doc(db, 'ids', game.playerId), { uid });
+        game.confirmId(uid);
+        return;
+      } catch (err) {
+        if (err && err.code === 'permission-denied') game.newPlayerId(); // taken
+        else return; // offline or other problem: try again next time
+      }
+    }
+  }
+
+  // ---------- chat ----------
+  setNote('Log in to chat with the team.');
 
   function setOpen(open) {
     isOpen = open;
@@ -68,45 +231,12 @@ async function start() {
     send: (text) => sendMessage({ text: text.slice(0, MAX_TEXT) }, text),
   };
 
-  // Share name, ID and balance with the owner (throttled).
-  let syncTimer = null;
-  function syncProfile(delay = 1500) {
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => {
-      if (!uid) return;
-      fb.setDoc(fb.doc(db, 'players', uid), {
-        name: game.name, gender: game.gender, playerId: game.playerId, nu: game.nu, spins: game.spins, updatedAt: fb.serverTimestamp(),
-      }, { merge: true }).catch(() => {});
-    }, delay);
-  }
-  game.onChange(() => syncProfile());
-
-  // Reserve this player's ID number in ids/{number} so no two players share one.
-  // The database only allows creating an ID that nobody has yet; if it is taken,
-  // pick a new number and try again.
-  async function claimId() {
-    if (game.idOwner === uid) return;
-    for (let tries = 0; tries < 8; tries++) {
-      try {
-        await fb.setDoc(fb.doc(db, 'ids', game.playerId), { uid });
-        game.confirmId(uid);
-        return;
-      } catch (err) {
-        if (err && err.code === 'permission-denied') game.newPlayerId(); // taken
-        else return; // offline or other problem: try again next time the game opens
-      }
-    }
-  }
-
-  fb.onAuthStateChanged(auth, (user) => {
-    if (!user || uid) return;
-    uid = user.uid;
+  function startListeners() {
     ready();
     setNote('');
     input.disabled = false;
     photo.disabled = false;
     sendBtn.disabled = false;
-    claimId().finally(() => syncProfile(0));
 
     fb.onSnapshot(
       fb.query(fb.collection(chatRef(), 'messages'), fb.orderBy('createdAt'), fb.limitToLast(100)),
@@ -121,7 +251,7 @@ async function start() {
       updateBadge();
     }, () => {});
 
-    // Nu sent by the owner arrive here; apply each once, then remove it.
+    // Nu added by the team arrive here; apply each once, then remove it.
     fb.onSnapshot(fb.collection(db, 'players', uid, 'grants'), (snap) => {
       for (const d of snap.docs) {
         const g = d.data();
@@ -129,8 +259,7 @@ async function start() {
         fb.deleteDoc(d.ref).catch(() => {});
       }
     }, () => {});
-  });
-  fb.signInAnonymously(auth).catch(() => setNote('Chat is unavailable right now.'));
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -160,6 +289,18 @@ async function start() {
       setNote('');
     } catch (err) {
       setNote(err.message && !err.code ? err.message : 'Photo not sent. Try again.');
+    }
+  });
+
+  // ---------- start: already logged in on this phone? ----------
+  let checked = false;
+  fb.onAuthStateChanged(auth, (user) => {
+    if (checked) return;
+    checked = true;
+    if (user && !user.isAnonymous) {
+      enter(user, 'resume').catch(() => showAccount('login', 'Could not load your account. Check your connection and log in again.'));
+    } else {
+      showAccount(game.localOwner ? 'login' : 'create');
     }
   });
 }

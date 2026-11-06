@@ -23,13 +23,19 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
     }
 
-    // Each player's profile, shared with the owner: players/{player's auth uid}
+    // Each player's account (progress, name, balance), also readable by the owner: players/{auth uid}
     match /players/{uid} {
       allow read: if isAdmin() || isOwner(uid);
       allow create, update: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['name', 'gender', 'playerId', 'nu', 'spins', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins',
+                                                  'history', 'grants', 'prizeNoteSeen', 'updatedAt'])
         && optString(request.resource.data, 'name', 20)
+        && optString(request.resource.data, 'username', 20)
         && optString(request.resource.data, 'gender', 20)
+        && (!('history' in request.resource.data) || (request.resource.data.history is list
+            && request.resource.data.history.size() <= 40))
+        && (!('grants' in request.resource.data) || (request.resource.data.grants is list
+            && request.resource.data.grants.size() <= 500))
         && optString(request.resource.data, 'playerId', 12);
 
       // Nu sent by the owner. Only the owner can create them; the player removes each one once added.

@@ -108,7 +108,7 @@ async function start() {
     const q = $('search').value.trim().toLowerCase();
     const ul = $('playerList');
     const shown = [...players.values()].filter((p) => !q
-      || String(p.name || '').toLowerCase().includes(q) || String(p.playerId || '').toLowerCase().includes(q));
+      || [p.name, p.playerId, p.username].some((v) => String(v || '').toLowerCase().includes(q)));
     ul.replaceChildren();
     if (!shown.length) {
       const li = document.createElement('li');
@@ -121,7 +121,7 @@ async function start() {
       li.querySelector('.idtag').textContent = `ID ${p.playerId || '?'}`;
       li.querySelector('.nm').textContent = p.name || 'Unnamed';
       li.querySelector('.meta').textContent = fmtTime(p.updatedAt);
-      li.querySelector('.sub').textContent = [p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${p.spins || 0} spins`].filter(Boolean).join(' · ');
+      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${p.spins || 0} spins`].filter(Boolean).join(' · ');
       ul.append(li);
     }
   }
