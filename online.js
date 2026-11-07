@@ -140,9 +140,10 @@ async function start() {
         throw err;
       }
       const localIsMine = game.localOwner === uid;
-      if (data && !(localIsMine && game.spins > (data.spins || 0))) game.importState(data, uid);
+      // Use the online copy unless this phone has the same account and is at least as far along.
+      if (data && !(localIsMine && game.spins >= (data.spins || 0))) game.importState(data, uid);
       else if (!localIsMine) game.startFresh({ username: fromEmail(user.email), gender: '', owner: uid });
-      // otherwise this phone has newer progress for this account; it is saved below
+      // otherwise this phone's progress for this account is kept and saved below
     }
     entered = true;
     if (accountDlg.open) accountDlg.close();
@@ -291,6 +292,62 @@ async function start() {
       setNote(err.message && !err.code ? err.message : 'Photo not sent. Try again.');
     }
   });
+
+  // ---------- owner tools (only when the owner is signed in on the owner page on this phone) ----------
+  // The owner page signs in under its own Firebase app named 'owner'; the game reads that sign-in.
+  // Players can never sign in as the owner, so they never see the link or the notifications.
+  function startOwnerTools() {
+    const ownerApp = fb.initializeApp(cfg.firebase, 'owner');
+    const ownerAuth = fb.getAuth(ownerApp);
+    const ownerDb = fb.getFirestore(ownerApp);
+    const link = document.querySelector('[data-action="owner"]');
+    const toast = $('ownerToast');
+    let unsub = null;
+    let hideTimer = null;
+
+    $('ownerToastClose').addEventListener('click', () => { toast.hidden = true; });
+
+    function notify(chatUid, c) {
+      const text = String(c.lastMessage || '');
+      const isRecharge = text.startsWith('Requested');
+      const who = `${c.name || 'A player'}${c.playerId ? ` (ID ${c.playerId})` : ''}`;
+      $('ownerToastTitle').textContent = isRecharge ? '💰 Recharge request' : '💬 New message';
+      $('ownerToastText').textContent = `${who}\n${text.split('\n')[0]}`;
+      $('ownerToastOpen').href = `admin.html?chat=${encodeURIComponent(chatUid)}`;
+      toast.hidden = false;
+      game.alertSound();
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => { toast.hidden = true; }, 20000);
+    }
+
+    fb.onAuthStateChanged(ownerAuth, (user) => {
+      const isOwner = !!user && user.uid === cfg.adminUid;
+      link.hidden = !isOwner;
+      if (unsub) { unsub(); unsub = null; }
+      if (!isOwner) { $('ownerDot').hidden = true; return; }
+      const openedAt = Date.now();
+      const seen = new Map(); // chat uid -> latest message time already handled
+      unsub = fb.onSnapshot(
+        fb.query(fb.collection(ownerDb, 'chats'), fb.orderBy('updatedAt', 'desc'), fb.limit(100)),
+        (snap) => {
+          let unread = 0;
+          for (const d of snap.docs) {
+            const c = d.data({ serverTimestamps: 'estimate' });
+            const t = c.updatedAt && c.updatedAt.toDate ? c.updatedAt.toDate().getTime() : 0;
+            const handled = seen.get(d.id) || openedAt;
+            if (c.unread) unread++;
+            if (c.unread && t > handled) notify(d.id, c); // only messages that arrive while the game is open
+            seen.set(d.id, Math.max(handled, t));
+          }
+          $('ownerCount').textContent = String(unread);
+          $('ownerCount').hidden = !unread;
+          $('ownerDot').hidden = !unread;
+        },
+        () => {},
+      );
+    });
+  }
+  startOwnerTools();
 
   // ---------- start: already logged in on this phone? ----------
   let checked = false;

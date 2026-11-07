@@ -576,6 +576,8 @@
     clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
     showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
     showPrizeNote,
+    // Short alert sound for the owner's notifications (works once sound has been allowed by a tap).
+    alertSound() { if (audio) { ensureAudio(); chime([880, 1175, 1568]); } },
     get playerId() { return state.playerId; },
     // Which online account has confirmed this ID number as its own.
     get idOwner() { return state.idOwner || null; },

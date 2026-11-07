@@ -23,6 +23,10 @@ Sign in with the owner's Firebase email/password to:
 - **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
 - **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat.
 
+When the owner is signed in on `admin.html` on the same phone, the game also shows **🛠 Owner page** in the ☰ menu
+and a banner (with a sound) whenever a player sends a recharge request or message; **Open** goes straight to that
+player's chat (`admin.html?chat=<uid>`). Players never see these.
+
 ## Online setup (Firebase, free plan)
 Chat, gifts and the player list use Firebase:
 1. Create a Firebase project; enable **Anonymous** and **Email/Password** sign-in; add the owner as a user.
