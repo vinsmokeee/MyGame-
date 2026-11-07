@@ -635,12 +635,10 @@
   if ($('dropSound')) $('dropSound').addEventListener('click', () => setSound(!soundOn));
 
   // Big wins are shared with other players online (online.js shows them as a short message).
-  // Announced live: every ×3, ×5, big prize and Jackpot at any bet; ×2 only when it pays at least
-  // ANNOUNCE_X2_MIN (×2 is very common, so small ones would flood everyone's screen).
-  const ANNOUNCE_X2_MIN = 100;
+  // Announced live to every other player: every win of ×2 or more (×2, ×3, ×5, big prizes, Jackpot)
+  // at every bet.
   function announceWin(game, label, payout, mult) {
     if (!window.LuckyFeed || !(mult >= 2) || payout <= 0) return;
-    if (mult < 3 && payout < ANNOUNCE_X2_MIN) return;
     window.LuckyFeed.post({ game, label, amount: Math.floor(payout) });
   }
   document.addEventListener('keydown', (e) => {

@@ -10,7 +10,7 @@ https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 - **Adding a game:** add a `view-<name>` section and a lobby card in `index.html`, and a script that uses the
   shared wallet (see `drop.js`).
 
-- **Big-win announcements:** every ×3, ×5, big prize and Jackpot (and ×2 wins of Nu 100 or more) in any game are posted to `wins/` and shown to
+- **Big-win announcements:** every win of ×2 or more (×2, ×3, ×5, big prizes, Jackpot) at every bet in any game are posted to `wins/` and shown to
   every other player online for about 3.5 seconds, e.g. "Tashi (ID 627182) hit ×3 in SOMA Drop and won Nu 300".
   Players who were away see the wins they missed (up to 8 from the last 24 hours, marked "· 25 min ago") when they
   come back; each win is shown once per phone.
