@@ -469,7 +469,7 @@
       // Same content as the welcome pop-up and prize note, any time from the menu.
       $('noteId').textContent = state.playerId;
       $('noteWelcomeList').innerHTML = $('welcomeList').innerHTML;
-      fillPrizeLines($('notePrizeList'));
+      fillPrizeLines($('notePrizeGames'));
       $('noteDialog').showModal();
     } else if (action === 'logout') {
       if (window.LuckyAccount) window.LuckyAccount.logout();
@@ -505,23 +505,37 @@
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
   // Prize note: what the three big slices pay at each bet (same formula the wheel uses).
-  function fillPrizeLines(list) {
-    list.replaceChildren();
-    const bigs = SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full);
-    for (const opt of betSel.options) {
-      const bet = Number(opt.value);
-      const li = document.createElement('li');
-      const b = document.createElement('strong');
-      b.textContent = `${fmtNu(bet)} bet`;
-      // non-breaking spaces keep each amount ("Nu 12,500") on one line
-      li.append(b, ` = Prize ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
-      list.append(li);
+  // Prize note for ALL games. Each game adds itself to window.SOMA_PRIZES with a title and the
+  // prizes it pays for a bet; the note lists them per bet ("Nu 20 bet = Prize Nu 40, Nu 400, ...").
+  const PRIZE_NOTE_VERSION = 2; // raise this when the note changes, so every player sees it once more
+  window.SOMA_PRIZES = window.SOMA_PRIZES || [];
+  window.SOMA_PRIZES.unshift({
+    title: '🎡 Lucky Spin',
+    prizes: (bet) => SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full).map((seg) => bigPrize(seg, bet)),
+  });
+  function fillPrizeLines(box) {
+    box.replaceChildren();
+    for (const g of window.SOMA_PRIZES) {
+      const h = document.createElement('h4');
+      h.textContent = g.title;
+      const list = document.createElement('ul');
+      list.className = 'prize-note-list';
+      for (const opt of betSel.options) {
+        const bet = Number(opt.value);
+        const li = document.createElement('li');
+        const b = document.createElement('strong');
+        b.textContent = `${fmtNu(bet)} bet`;
+        // non-breaking spaces keep each amount ("Nu 12,500") on one line
+        li.append(b, ` = Prize ${g.prizes(bet).map((n) => fmtNu(n).replace(' ', '\u00a0')).join(', ')}`);
+        list.append(li);
+      }
+      box.append(h, list);
     }
   }
   function showPrizeNote() {
-    fillPrizeLines($('prizeNoteList'));
+    fillPrizeLines($('prizeNoteGames'));
     const dlg = $('prizeNoteDialog');
-    state.prizeNoteSeen = true; // shown once per player
+    state.prizeNoteSeen = PRIZE_NOTE_VERSION; // shown once per player (and again when the note changes)
     save();
     dlg.showModal();
   }
@@ -616,7 +630,7 @@
   window.LuckySpin = {
     // ----- accounts (used by online.js) -----
     get localOwner() { return state.uid || null; },
-    get prizeNoteSeen() { return !!state.prizeNoteSeen; },
+    get prizeNoteSeen() { return Number(state.prizeNoteSeen) >= PRIZE_NOTE_VERSION; },
     exportState() {
       const out = {};
       for (const k of ACCOUNT_FIELDS) if (state[k] !== undefined) out[k] = state[k];
@@ -714,6 +728,6 @@
   // With online accounts, online.js shows the log-in / create-account pop-up instead.
   if (!(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase)) {
     if (!state.gender) startSignup();
-    else if (!state.prizeNoteSeen) showPrizeNote();
+    else if (!(Number(state.prizeNoteSeen) >= PRIZE_NOTE_VERSION)) setTimeout(showPrizeNote, 0); // after every game has loaded
   }
 })();

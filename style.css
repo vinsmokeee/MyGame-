@@ -254,6 +254,10 @@ a.drawer-item { display: block; text-decoration: none; }
 .owner-toast-close { background: none; border: 0; color: #2a2100; font-size: 1.1rem; cursor: pointer; padding: 4px; flex: none; }
 @keyframes toast-in { from { transform: translate(-50%, -20px); opacity: 0; } }
 
+.prize-games h4 { margin: 12px 0 2px; color: #f4d27c; font-size: .95rem; text-align: left; }
+.prize-games .prize-note-list { margin-bottom: 4px; text-align: left; }
+.prize-note .prize-games { max-height: 55vh; overflow-y: auto; }
+
 /* ---------- chat ---------- */
 .msg-delete { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; opacity: .9; }
 .has-dot { position: relative; }

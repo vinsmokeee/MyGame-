@@ -24,6 +24,13 @@
     : m >= 3 ? ['#5e0f1c', '#9e1d33'] : m >= 2 ? ['#06301f', '#0f6b44'] : ['#15171e', '#2a2d36']);
   const slotText = (m) => (m >= 100 ? '#2a1d00' : m <= 0.5 ? '#a3a7b0' : '#fbf3df');
 
+  // Prizes listed in the shared Note pop-up (the winning slots, smallest to largest).
+  window.SOMA_PRIZES = window.SOMA_PRIZES || [];
+  window.SOMA_PRIZES.push({
+    title: '🎯 SOMA Drop',
+    prizes: (b) => [...new Set(SLOTS.filter((s) => s.m > 1).map((s) => s.m))].sort((x, y) => x - y).map((m) => Math.floor(b * m)),
+  });
+
   const $ = (id) => document.getElementById(id);
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
   let bet = BETS[0];
