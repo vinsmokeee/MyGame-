@@ -235,7 +235,7 @@
     const bet = Number(betSel.value);
     if (state.nu < bet) {
       setMessage(state.nu < minBet()
-        ? 'You are out of Nu. Open ☰ Menu → Recharge Nu to top up.'
+        ? 'You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.'
         : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller bet.`, 'lose');
       return;
     }
@@ -311,7 +311,7 @@
     state.best = Math.max(state.best, state.nu);
     setMessage(text, kind);
     if (state.nu < minBet()) {
-      setTimeout(() => setMessage('You are out of Nu. Open ☰ Menu → Recharge Nu to top up.', 'lose'), 2200);
+      setTimeout(() => setMessage('You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.', 'lose'), 2200);
     }
     save();
     render();
@@ -473,10 +473,12 @@
       $('noteDialog').showModal();
     } else if (action === 'logout') {
       if (window.LuckyAccount) window.LuckyAccount.logout();
-    } else if (action === 'recharge') {
-      $('rechargeMsg').textContent = '';
-      $('rechargeDialog').showModal();
     }
+  });
+  // Recharge is inside the chat now (button at the top of Contact us).
+  $('chatRecharge').addEventListener('click', () => {
+    $('rechargeMsg').textContent = '';
+    $('rechargeDialog').showModal();
   });
 
   $('rechargeForm').addEventListener('submit', async (e) => {

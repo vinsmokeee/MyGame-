@@ -128,8 +128,7 @@
   <a class="drawer-item" href="#" data-action="nav">🏠 All games</a>
   <a class="drawer-item" href="#spin" data-action="nav">🎡 SOMA Spin</a>
   <a class="drawer-item" href="#drop" data-action="nav">🎯 SOMA Drop</a>
-  <button class="drawer-item" type="button" data-action="contact">💬 Contact us <span class="unread-dot inline" hidden aria-label="New message"></span></button>
-  <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
+  <button class="drawer-item" type="button" data-action="contact">💬 Contact us / 💰 Recharge Nu <span class="unread-dot inline" hidden aria-label="New message"></span></button>
   <a class="drawer-item" href="admin.html" data-action="owner" hidden>🛠 Owner page <span id="ownerCount" class="count-pill" hidden></span></a>
   <button class="drawer-item" type="button" data-action="note">📝 Note</button>
   <button class="drawer-item" type="button" data-action="logout" hidden>🚪 Log out</button>
@@ -263,6 +262,7 @@
 <section id="chatPanel" class="chat-panel" aria-label="Contact us" hidden>
   <header class="chat-head">
     <strong>💬 Contact us</strong>
+    <button id="chatRecharge" class="primary small chat-recharge" type="button">💰 Recharge Nu</button>
     <button id="chatClose" class="icon-btn" type="button" aria-label="Close chat">✕</button>
   </header>
   <div id="chatList" class="chat-list" aria-live="polite"></div>

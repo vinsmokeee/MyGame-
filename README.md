@@ -28,7 +28,7 @@ Players get back about 82% of their bets over time (plus the shared play bonus).
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 20** bonus.
 - Players can set their own name (✏️ Edit name).
-- The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
+- The ☰ menu has **Contact us / Recharge Nu**: the chat with the owner (text and photos), with a **💰 Recharge Nu** button at the top that sends a recharge request (minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.
 
 ## Owner tools (`admin.html`)

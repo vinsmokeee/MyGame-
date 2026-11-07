@@ -141,7 +141,7 @@
     if (balls.filter((b) => !b.done).length >= MAX_BALLS) return;
     const paid = game.spend(bet);
     if (!paid.ok) {
-      say(game.nu < BETS[0] ? 'You are out of Nu. Open ☰ Menu → Recharge Nu to top up.' : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller one.`, 'lose');
+      say(game.nu < BETS[0] ? 'You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.' : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller one.`, 'lose');
       return;
     }
     const slot = pickSlot();

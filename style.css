@@ -274,6 +274,7 @@ a.drawer-item { display: block; text-decoration: none; }
   box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
 }
 .chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 14px; border-bottom: 1px solid var(--line); }
+.chat-head .chat-recharge { margin-left: auto; margin-right: 8px; white-space: nowrap; }
 .chat-head .icon-btn { width: 34px; height: 34px; font-size: 1rem; }
 .chat-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .chat-empty { color: var(--muted); text-align: center; margin: auto 0; font-size: .9rem; list-style: none; }
