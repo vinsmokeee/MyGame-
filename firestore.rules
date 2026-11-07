@@ -68,6 +68,8 @@ service cloud.firestore {
           && (('text' in request.resource.data && request.resource.data.text.size() > 0)
               || 'image' in request.resource.data)
           && request.resource.data.createdAt == request.time;
+        // The owner can delete their own messages and photos (e.g. sent to the wrong player).
+        allow delete: if isAdmin() && resource.data.from == 'admin';
       }
     }
   }

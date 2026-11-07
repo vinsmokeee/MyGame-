@@ -4,9 +4,9 @@ A browser prize-wheel game played with **Nu** (play points). Open `index.html` i
 https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is needed.
 
 ## How to play
-- Players start with Nu 200, pick a bet (Nu 20/50/100) and press **SPIN** (or Space).
+- Players start with Nu 200, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).
 - Never more than 2 LOSE in a row (about 41% of spins are LOSE). ×0.5 about 1 in 3, ×2 1 in 8, ×3 1 in 20,
-  ×5 1 in 50. Three big prizes pay in full at a Nu 100 bet (smaller share at lower bets): Nu 1,000 (~1 in 180),
+  ×5 1 in 50. Three big prizes pay their listed amount at a Nu 100 bet (smaller share at lower bets, 5× at Nu 500): Nu 1,000 (~1 in 180),
   Nu 10,000 (~1 in 2,200) and the Jackpot Nu 50,000 (~1 in 15,000). Over time players get back about 82–87% of
   their bets (including the spin bonus). Tune `p` in `SEGMENTS` and `MAX_LOSE_RUN` in `game.js`.
 - Players create an account (username, password, gender) or log in. Their progress (Nu, ID, history, chat)
@@ -21,7 +21,7 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 ## Owner tools (`admin.html`)
 Sign in with the owner's Firebase email/password to:
 - **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
-- **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat.
+- **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat. Your own messages and photos have a **Delete** link (e.g. sent to the wrong player).
 
 When the owner is signed in on `admin.html` on the same phone, the game also shows **🛠 Owner page** in the ☰ menu
 and a banner (with a sound) whenever a player sends a recharge request or message; **Open** goes straight to that

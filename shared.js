@@ -49,7 +49,8 @@ export async function compressImage(file) {
 }
 
 // Renders a list of chat messages. `mine` is the sender value shown on the right.
-export function renderMessages(list, msgs, mine, emptyText) {
+// With `onDelete`, your own messages get a Delete button (used on the owner page).
+export function renderMessages(list, msgs, mine, emptyText, onDelete) {
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
   list.innerHTML = '';
   if (!msgs.length && emptyText) {
@@ -77,6 +78,15 @@ export function renderMessages(list, msgs, mine, emptyText) {
     }
     const t = document.createElement('time');
     t.textContent = fmtTime(m.createdAt);
+    if (onDelete && m.from === mine && m.id) {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'msg-delete';
+      del.textContent = 'Delete';
+      del.setAttribute('aria-label', 'Delete this message');
+      del.addEventListener('click', () => onDelete(m));
+      t.append(' · ', del);
+    }
     div.append(t);
     list.append(div);
   }
