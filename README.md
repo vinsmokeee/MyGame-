@@ -11,8 +11,9 @@ https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
   shared wallet (see `drop.js`).
 
 ## SOMA Drop (`drop.js`)
-A Plinko-style board: 12 rows of pins, the ball goes left or right at each row with equal chance. Bets Nu 20/50/100/500.
-Slots ×0.5 (middle, ~85%), ×2 (~11%), ×3 (~3%), ×5 (~0.6%) and the two edge JACKPOT slots ×100 (1 in 2,048).
+A Plinko-style board with 12 rows of pins. Bets Nu 20/50/100/500. Layout JACKPOT ×5 ×3 ×2 ×2 ×0.5 ×0.5 ×0.5 ×2 ×2 ×3 ×5
+JACKPOT: ×0.5 (~85%), ×2 (~11%), ×3 (~3%), ×5 (~0.6%), JACKPOT ×100 (1 in 2,048). Each slot's chance is set in
+`SLOTS` (`p`) in `drop.js`, and the ball's path is drawn to that slot.
 Players get back about 82% of their bets over time (plus the shared play bonus).
 
 ## Lucky Spin

@@ -7,14 +7,23 @@
   if (!game) return;
 
   // ---------- settings ----------
-  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet.
-  // At every row the ball goes left or right with equal chance, so most balls land in the middle
-  // (×0.5) and the edges are rare. Chances per drop: ×0.5 85%, ×2 11%, ×3 3%, ×5 0.6%, JACKPOT 1 in 2,048.
-  // Players get back about 82% of their bets over time (plus the shared free bonus every 10 plays).
+  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet, p = chance per drop.
+  // Layout: JACKPOT ×5 ×3 ×2 ×2 ×0.5 ×0.5 ×0.5 ×2 ×2 ×3 ×5 JACKPOT. Each slot's chance is set directly
+  // (if the pins decided, the four ×2 slots would catch ~35% of balls and players would gain ~118%).
+  // The ball's bounce path is then drawn to that slot. Totals per drop: ×0.5 85%, ×2 11% (1 in 9),
+  // ×3 3.2%, ×5 0.6%, JACKPOT 1 in 2,048. Players get back about 82% of their bets over time
+  // (plus the shared free bonus every 10 plays).
+  const PJP = 1 / 4096;          // each JACKPOT slot (two of them: 1 in 2,048 in total)
+  const P5 = 12 / 4096;          // each ×5 slot
+  const P3 = 66 / 4096;          // each ×3 slot
+  const P2 = 440 / 4096 / 4;     // each of the four ×2 slots
+  const P05 = 3498 / 4096 / 3;   // each of the three ×0.5 slots
   const SLOTS = [
-    { t: 'JACKPOT', m: 100 }, { t: '×5', m: 5 }, { t: '×3', m: 3 }, { t: '×2', m: 2 },
-    { t: '×0.5', m: 0.5 }, { t: '×0.5', m: 0.5 }, { t: '×0.5', m: 0.5 }, { t: '×0.5', m: 0.5 }, { t: '×0.5', m: 0.5 },
-    { t: '×2', m: 2 }, { t: '×3', m: 3 }, { t: '×5', m: 5 }, { t: 'JACKPOT', m: 100 },
+    { t: 'JACKPOT', m: 100, p: PJP }, { t: '×5', m: 5, p: P5 }, { t: '×3', m: 3, p: P3 },
+    { t: '×2', m: 2, p: P2 }, { t: '×2', m: 2, p: P2 },
+    { t: '×0.5', m: 0.5, p: P05 }, { t: '×0.5', m: 0.5, p: P05 }, { t: '×0.5', m: 0.5, p: P05 },
+    { t: '×2', m: 2, p: P2 }, { t: '×2', m: 2, p: P2 },
+    { t: '×3', m: 3, p: P3 }, { t: '×5', m: 5, p: P5 }, { t: 'JACKPOT', m: 100, p: PJP },
   ];
   const BETS = [20, 50, 100, 500];
   const MAX_BALLS = 6; // balls in the air at once
@@ -99,11 +108,27 @@
   const pins = [];
   for (let r = 0; r < ROWS; r++) for (let m = 0; m <= r; m++) pins.push({ x: pinX(r, m), y: pinY(r) });
 
-  // Fair left/right flips at each row, from the browser's secure random numbers.
-  function flips() {
-    const a = new Uint8Array(ROWS);
+  // Secure random number in [0, 1).
+  function rand() {
+    const a = new Uint32Array(1);
     crypto.getRandomValues(a);
-    return Array.from(a, (v) => v & 1);
+    return a[0] / 4294967296;
+  }
+  // Pick the slot by its chance, then a random bounce path that ends there
+  // (slot k = k bounces to the right out of 12 rows, in a random order).
+  function pickSlot() {
+    const total = SLOTS.reduce((s, x) => s + x.p, 0);
+    let r = rand() * total;
+    for (let i = 0; i < SLOTS.length; i++) { r -= SLOTS[i].p; if (r < 0) return i; }
+    return 6;
+  }
+  function pathTo(slot) {
+    const path = Array.from({ length: ROWS }, (_, i) => (i < slot ? 1 : 0));
+    for (let i = path.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [path[i], path[j]] = [path[j], path[i]];
+    }
+    return path;
   }
 
   let balls = [];
@@ -117,8 +142,8 @@
       say(game.nu < BETS[0] ? 'You are out of Nu. Open ☰ Menu → Recharge Nu to top up.' : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller one.`, 'lose');
       return;
     }
-    const path = flips();
-    const slot = path.reduce((s, v) => s + v, 0);
+    const slot = pickSlot();
+    const path = pathTo(slot);
     const pts = [{ x: W / 2, y: 14 }];
     let k = 0;
     for (let r = 0; r < ROWS; r++) {
