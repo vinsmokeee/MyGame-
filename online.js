@@ -124,6 +124,16 @@ async function start() {
     }
   });
 
+  function markDeviceUsed(ownerUid, username) {
+    game.ensureDeviceId();
+    try { localStorage.setItem('soma.giftUsed', '1'); } catch (_) { /* ignore */ }
+    const ref = fb.doc(db, 'devices', game.deviceId());
+    fb.getDoc(ref).then((snap) => {
+      if (!snap.exists()) return fb.setDoc(ref, { uid: ownerUid, username: String(username || '').slice(0, 20), createdAt: fb.serverTimestamp() });
+      return null;
+    }).catch(() => {});
+  }
+
   // Returns true if this phone has not had a welcome gift yet (and records it), false otherwise.
   async function claimWelcomeGift(newUid, username) {
     try { if (localStorage.getItem('soma.giftUsed')) return false; } catch (_) { /* ignore */ }
@@ -161,6 +171,9 @@ async function start() {
       // otherwise this phone's progress for this account is kept and saved below
     }
     entered = true;
+    // Any account used on this phone (even one made before the one-gift-per-phone check) marks the
+    // phone, so a new account here does not get another welcome gift.
+    if (mode !== 'created') markDeviceUsed(user.uid, game.username || fromEmail(user.email));
     if (accountDlg.open) accountDlg.close();
     document.querySelector('[data-action="logout"]').hidden = false;
     startListeners();

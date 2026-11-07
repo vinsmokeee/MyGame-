@@ -703,8 +703,11 @@
       state = normalize(s);
       state.uid = owner;
       state.idOwner = owner;
+      if (!state.deviceId) state.deviceId = deviceId(); // older accounts: remember the phone they use
       refreshAll();
     },
+    get username() { return state.username || ''; },
+    ensureDeviceId() { if (!state.deviceId) { state.deviceId = deviceId(); save(); } },
     // A new account: fresh start with the Nu 200 welcome gift.
     // gift: false when this phone already received the welcome gift for another account.
     startFresh({ username, gender, owner, gift = true }) {
