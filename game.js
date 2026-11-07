@@ -2,7 +2,7 @@
   'use strict';
 
   const START_NU = 200;
-  const MAX_BET = 100;      // the big prizes pay in full at this bet
+  const FULL_PRIZE_BET = 100; // the big prizes pay their listed amount at this bet
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
   const BONUS_EVERY = 10;   // spins
@@ -41,9 +41,10 @@
   ];
   for (const x of SEGMENTS) x.weight = x.p;
   // Big prize for a bet: full at Nu 100; at Nu 50 a quarter, at Nu 20 one twenty-fifth.
-  const bigPrize = (seg, bet) => Math.round(seg.full * Math.min(1, bet / MAX_BET) ** 2);
+  // Below Nu 100 a smaller share (Nu 50 = a quarter, Nu 20 = 1/25); above it, in proportion (Nu 500 = 5x).
+  const bigPrize = (seg, bet) => Math.round(seg.full * (bet <= FULL_PRIZE_BET ? (bet / FULL_PRIZE_BET) ** 2 : bet / FULL_PRIZE_BET));
   // Big slices show the actual amount for the chosen bet, e.g. "NU 400" at Nu 20, "NU 10,000" at Nu 100.
-  const segLabel = (seg) => ((seg.mega || seg.big) ? `NU ${bigPrize(seg, Number(betSel.value)).toLocaleString('en-US')}` : seg.label);
+  const segLabel = (seg) => ((seg.mega || seg.big) ? `NU ${bigPrize(seg, Number(betSel.value)).toLocaleString('en-US')}` : seg.label.replace(/^x/, '×'));
   const N = SEGMENTS.length;
   const ARC = (Math.PI * 2) / N;
   const TOTAL_WEIGHT = SEGMENTS.reduce((s, x) => s + x.weight, 0);
@@ -95,57 +96,98 @@
   }
 
   // ---------- drawing ----------
+  // Classic casino look: crimson / black slices, gold rim and dividers, emerald for the
+  // Nu 1,000 / 10,000 slices and solid gold for the Jackpot.
+  const THEME = {
+    crimson: ['#5e0f1c', '#9e1d33'], onyx: ['#0c0d11', '#26282f'], emerald: ['#06301f', '#0f6b44'],
+    gold: ['#8a6414', '#f4d27c'], ivory: '#fbf3df', silver: '#a3a7b0', goldText: '#f4d27c', darkText: '#2a1d00',
+  };
+  const sliceStyle = (seg, i) => {
+    if (seg.jackpot) return { fill: THEME.gold, text: THEME.darkText };
+    if (seg.full) return { fill: THEME.emerald, text: THEME.goldText };
+    if (isLose(seg)) return { fill: THEME.onyx, text: THEME.silver };
+    return { fill: i % 2 ? THEME.onyx : THEME.crimson, text: THEME.ivory };
+  };
+  const nice = (label) => label.replace(/^x/, '×');
+
   function drawWheel() {
     const size = wheel.width;
     const c = size / 2;
-    const r = c - 14;
+    const rimOuter = c - 2;
+    const r = c - 26; // slices
     ctx.clearRect(0, 0, size, size);
 
+    // gold rim
+    const rim = ctx.createLinearGradient(0, 0, size, size);
+    [['#6e4f0f', 0], ['#f6dc8d', 0.22], ['#a87b1c', 0.45], ['#fbe7a8', 0.62], ['#8a6414', 0.82], ['#e9c66a', 1]]
+      .forEach(([col, at]) => rim.addColorStop(at, col));
     ctx.beginPath();
-    ctx.arc(c, c, c - 2, 0, Math.PI * 2);
-    ctx.fillStyle = '#2b2459';
+    ctx.arc(c, c, rimOuter, 0, Math.PI * 2);
+    ctx.fillStyle = rim;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(c, c, r + 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1206';
     ctx.fill();
 
     for (let i = 0; i < N; i++) {
       // segment 0 is centred at the top (-PI/2) when rotation is 0
       const start = rotation - Math.PI / 2 - ARC / 2 + i * ARC;
       const seg = SEGMENTS[i];
+      const st = sliceStyle(seg, i);
+      const g = ctx.createRadialGradient(c, c, r * 0.15, c, c, r);
+      g.addColorStop(0, st.fill[0]);
+      g.addColorStop(1, st.fill[1]);
       ctx.beginPath();
       ctx.moveTo(c, c);
       ctx.arc(c, c, r, start, start + ARC);
       ctx.closePath();
-      if (seg.mega) {
-        const g = ctx.createRadialGradient(c, c, r * 0.2, c, c, r);
-        g.addColorStop(0, '#450a0a');
-        g.addColorStop(1, '#b91c1c');
-        ctx.fillStyle = g;
-      } else {
-        ctx.fillStyle = seg.color;
-      }
+      ctx.fillStyle = g;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,.85)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
 
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate(start + ARC / 2);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = seg.mega ? '#ffd447' : '#fff';
-      ctx.font = `800 ${seg.full ? 23 : 28}px system-ui, sans-serif`;
-      ctx.shadowColor = 'rgba(0,0,0,.5)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(segLabel(seg), r - 20, 0);
+      ctx.fillStyle = st.text;
+      ctx.font = `800 ${seg.full ? 21 : 28}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+      ctx.shadowColor = seg.jackpot ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.6)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(segLabel(seg), r - 18, 1);
       ctx.restore();
     }
 
+    // thin gold dividers
+    ctx.save();
+    ctx.strokeStyle = 'rgba(232, 196, 106, .9)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < N; i++) {
+      const a = rotation - Math.PI / 2 - ARC / 2 + i * ARC;
+      ctx.beginPath();
+      ctx.moveTo(c + Math.cos(a) * r * 0.2, c + Math.sin(a) * r * 0.2);
+      ctx.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(c, c, r, 0, Math.PI * 2);
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+
+    // warm light bulbs on the rim (they twinkle while the wheel turns)
+    const phase = Math.floor(rotation * 4) % 2;
     for (let i = 0; i < N * 2; i++) {
       const a = rotation + (i * Math.PI) / N;
+      const bright = (i + phase) % 2 === 0;
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(c + Math.cos(a) * (c - 8), c + Math.sin(a) * (c - 8), 4, 0, Math.PI * 2);
-      ctx.fillStyle = i % 2 ? '#fff6c2' : '#ffd447';
+      ctx.arc(c + Math.cos(a) * (c - 13), c + Math.sin(a) * (c - 13), 5, 0, Math.PI * 2);
+      ctx.fillStyle = bright ? '#fff8e1' : '#d9b65c';
+      ctx.shadowColor = bright ? 'rgba(255, 236, 170, .95)' : 'transparent';
+      ctx.shadowBlur = bright ? 10 : 0;
       ctx.fill();
+      ctx.restore();
     }
   }
 
@@ -223,7 +265,7 @@
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
-    addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : seg.label, net);
+    addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : nice(seg.label), net);
     spinning = false;
 
     let text;
@@ -238,14 +280,14 @@
       text = `🏆 JACKPOT! You won ${fmtNu(payout)}!`; kind = 'jackpot';
       confetti(600); chime([523, 659, 784, 1047, 1319, 1568, 2093]);
     } else if (net > 0) {
-      text = `${seg.label}! You won ${fmtNu(payout)}.`; kind = 'win';
+      text = `${nice(seg.label)}! You won ${fmtNu(payout)}.`; kind = 'win';
       if (seg.mult >= 3) confetti(100);
       chime([523, 659, 784]);
     } else if (net === 0) {
-      text = `${seg.label}: you got your ${fmtNu(bet)} back.`;
+      text = `${nice(seg.label)}: you got your ${fmtNu(bet)} back.`;
       chime([440]);
     } else {
-      text = payout > 0 ? `${seg.label}: ${fmtNu(payout)} back.` : 'No luck this time.'; kind = 'lose';
+      text = payout > 0 ? `${nice(seg.label)}: ${fmtNu(payout)} back.` : 'No luck this time.'; kind = 'lose';
       chime([330, 247]);
     }
 
@@ -310,7 +352,7 @@
       const li = document.createElement('li');
       const sw = document.createElement('span');
       sw.className = 'swatch';
-      sw.style.background = seg.mega ? '#b91c1c' : seg.color;
+      sw.style.background = seg.jackpot ? '#e9c66a' : seg.full ? '#0f6b44' : isLose(seg) ? '#26282f' : '#9e1d33';
       const name = document.createElement('span');
       if (seg.full) {
         name.textContent = (seg.jackpot ? 'Jackpot: ' : '') + fmtNu(bigPrize(seg, bet));
@@ -516,7 +558,7 @@
   // ---------- other events ----------
   spinBtn.addEventListener('click', spin);
   betSel.addEventListener('change', () => {
-    setMessage('You can bet Nu 20, 50, 100.');
+    setMessage('You can bet Nu 20, 50, 100, 500.');
     buildLegend();
     drawWheel();
     render();

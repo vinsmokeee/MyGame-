@@ -56,14 +56,14 @@ h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); text-transform: uppe
 .stage { grid-area: stage; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
 .wheel-wrap { position: relative; width: min(100%, 520px); aspect-ratio: 1; }
-#wheel { width: 100%; height: 100%; display: block; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, .5)); }
+#wheel { width: 100%; height: 100%; display: block; filter: drop-shadow(0 14px 34px rgba(0, 0, 0, .65)); }
 
 .pointer {
-  position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 0; z-index: 2;
-  border-left: 18px solid transparent; border-right: 18px solid transparent;
-  border-top: 36px solid var(--accent);
-  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .5));
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  width: 34px; height: 44px; z-index: 2;
+  background: linear-gradient(180deg, #fbe7a8 0%, #d4a63a 55%, #8a6414 100%);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, .6));
 }
 .pointer.tick { animation: tick .08s ease-out; }
 @keyframes tick { 50% { transform: translateX(-50%) rotate(-12deg); } }
@@ -71,9 +71,10 @@ h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); text-transform: uppe
 .hub {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 22%; aspect-ratio: 1; border-radius: 50%;
-  border: 5px solid #fff; background: var(--accent); color: var(--accent-ink);
-  font-weight: 800; font-size: clamp(.9rem, 3vw, 1.3rem); letter-spacing: .05em;
-  cursor: pointer; box-shadow: 0 4px 16px rgba(0, 0, 0, .45);
+  border: 4px solid #6e4f0f;
+  background: radial-gradient(circle at 35% 30%, #fff1c4 0%, #f0cd6e 35%, #b8862a 75%, #7a5612 100%);
+  color: #2a1d00; font-weight: 900; font-size: clamp(.9rem, 3vw, 1.25rem); letter-spacing: .08em;
+  cursor: pointer; box-shadow: 0 6px 18px rgba(0, 0, 0, .6), inset 0 -4px 8px rgba(0, 0, 0, .25), inset 0 3px 6px rgba(255, 255, 255, .5);
   transition: transform .1s;
 }
 .hub:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.06); }
@@ -205,6 +206,7 @@ a.drawer-item { display: block; text-decoration: none; }
 @keyframes toast-in { from { transform: translate(-50%, -20px); opacity: 0; } }
 
 /* ---------- chat ---------- */
+.msg-delete { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; opacity: .9; }
 .has-dot { position: relative; }
 .unread-dot {
   position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%;

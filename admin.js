@@ -101,6 +101,8 @@ async function start() {
   }
 
   // ----- giving Nu -----
+  // "Recharge of Nu X successfully added" messages are the recharge history and can't be deleted.
+  const isRechargeRecord = (m) => typeof m.text === 'string' && /^Recharge of Nu [\d,]+ successfully added$/.test(m.text);
   const rechargeText = (amount) => `Recharge of ${fmtNu(amount)} successfully added`;
   async function giveNu(uid, amount) {
     if (!Number.isInteger(amount) || amount < 1 || amount > MAX_GIFT) {
@@ -213,7 +215,8 @@ async function start() {
     unsubThread = fb.onSnapshot(
       fb.query(fb.collection(chatRef, 'messages'), fb.orderBy('createdAt'), fb.limitToLast(200)),
       (snap) => {
-        renderMessages($('threadList'), snap.docs.map((d) => d.data({ serverTimestamps: 'estimate' })), 'admin', 'No messages yet.');
+        const msgs = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }));
+        renderMessages($('threadList'), msgs, 'admin', 'No messages yet.', (m) => deleteMessage(uid, m, msgs), isRechargeRecord);
         if (first) $('threadList').scrollTop = $('threadList').scrollHeight;
         first = false;
         if ((chats.find((x) => x.uid === uid) || {}).unread) {
@@ -221,6 +224,25 @@ async function start() {
         }
       },
     );
+  }
+
+  // Delete one of your own messages or photos (e.g. sent to the wrong player).
+  async function deleteMessage(uid, m, msgs) {
+    const what = m.image ? 'this photo' : 'this message';
+    if (!confirm(`Delete ${what}? The player will no longer see it.`)) return;
+    const chatRef = fb.doc(db, 'chats', uid);
+    try {
+      await fb.deleteDoc(fb.doc(db, 'chats', uid, 'messages', m.id));
+      // If it was the latest message, show the one before it in the inbox list.
+      if (msgs[msgs.length - 1] && msgs[msgs.length - 1].id === m.id) {
+        const prev = msgs[msgs.length - 2];
+        const preview = prev ? `${prev.from === 'admin' ? 'You: ' : ''}${prev.text ? prev.text.split('\n')[0] : '📷 Photo'}` : '';
+        await fb.setDoc(chatRef, { lastMessage: preview.slice(0, 200) }, { merge: true });
+      }
+      status($('threadMsg'), 'Deleted.', true);
+    } catch (_) {
+      status($('threadMsg'), 'Could not delete. Check the Firebase rules are up to date.', false);
+    }
   }
 
   function closeThread() {
