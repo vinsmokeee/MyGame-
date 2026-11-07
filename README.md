@@ -7,13 +7,13 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 - Players start with Nu 200, pick a bet (Nu 20/50/100) and press **SPIN** (or Space).
 - Never more than 2 LOSE in a row (about 41% of spins are LOSE). ×0.5 about 1 in 3, ×2 1 in 8, ×3 1 in 20,
   ×5 1 in 50. Three big prizes pay in full at a Nu 100 bet (smaller share at lower bets): Nu 1,000 (~1 in 180),
-  Nu 10,000 (~1 in 2,200) and the Jackpot Nu 50,000 (~1 in 15,000). Over time players get back about 88–90% of
-  Nu 50/100 bets. Tune `p` in `SEGMENTS` and `MAX_LOSE_RUN` in `game.js`.
+  Nu 10,000 (~1 in 2,200) and the Jackpot Nu 50,000 (~1 in 15,000). Over time players get back about 82–87% of
+  their bets (including the spin bonus). Tune `p` in `SEGMENTS` and `MAX_LOSE_RUN` in `game.js`.
 - Players create an account (username, password, gender) or log in. Their progress (Nu, ID, history, chat)
   is saved to Firebase, so they can log in from any phone. ☰ Menu → Log out. New accounts then see a welcome
   pop-up with their ID and the prize note. (Usernames are stored as `username@players.luckyspin.app` logins.)
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
-- Every 10 spins gives a free **Nu 50** bonus.
+- Every 10 spins gives a free **Nu 20** bonus.
 - Players can set their own name (✏️ Edit name).
 - The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.

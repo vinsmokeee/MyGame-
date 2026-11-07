@@ -6,7 +6,7 @@
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
   const BONUS_EVERY = 10;   // spins
-  const BONUS_NU = 50;
+  const BONUS_NU = 20;
   const MIN_RECHARGE = 100;
 
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
@@ -17,7 +17,7 @@
   //   never more than MAX_LOSE_RUN LOSE in a row (about 41% of spins end up LOSE),
   //   x0.5 about 1 in 3, x2 1 in 8, x3 1 in 20, x5 1 in 50,
   //   Nu 1,000 1 in 200, Nu 10,000 1 in 2,500, Jackpot Nu 50,000 1 in 20,000.
-  //   Players get back about 88-90% of Nu 50/100 bets (about 99% of Nu 20 bets, with the spin bonus).
+  //   With the Nu 20 spin bonus, players get back about 84% of Nu 20 bets, 82% of Nu 50 and 87% of Nu 100.
   const MAX_LOSE_RUN = 2;
   const SEGMENTS = [
     { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
