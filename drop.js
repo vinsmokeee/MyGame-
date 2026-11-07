@@ -192,7 +192,7 @@
     const payout = Math.floor(b.bet * slot.m);
     game.settle({ payout, net: payout - b.bet, label: `Drop ${slot.t}`, bonusDue: b.bonusDue });
     game.sound.beep(150, 0, 0.12, 0.13, 'sine'); // the ball lands in the slot
-    game.announceWin('SOMA Drop', slot.t, payout, slot.m >= 2);
+    game.announceWin('SOMA Drop', slot.t, payout, slot.m);
     flash[b.slot] = 1;
     pops.push({ x: Math.max(30, Math.min(W - 30, (b.slot + 0.5) * CW)), y: LAND_Y - 22, t: 1, txt: '+' + fmtNu(payout), c: slotColor(slot.m)[1] });
     let text;

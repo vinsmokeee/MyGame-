@@ -278,7 +278,7 @@
     state.nu += payout;
     addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : nice(seg.label), net);
     spinning = false;
-    announceWin('SOMA Spin', seg.jackpot ? 'JACKPOT' : seg.full ? '' : nice(seg.label), payout, seg.full || seg.mult >= 2);
+    announceWin('SOMA Spin', seg.jackpot ? 'JACKPOT' : seg.full ? '' : nice(seg.label), payout, seg.full ? 100 : seg.mult);
 
     let text;
     let kind = '';
@@ -635,10 +635,12 @@
   if ($('dropSound')) $('dropSound').addEventListener('click', () => setSound(!soundOn));
 
   // Big wins are shared with other players online (online.js shows them as a short message).
-  // Only wins of ×2 or more that pay at least ANNOUNCE_MIN, to keep the messages meaningful.
-  const ANNOUNCE_MIN = 100;
-  function announceWin(game, label, payout, isWin) {
-    if (!isWin || payout < ANNOUNCE_MIN || !window.LuckyFeed) return;
+  // Announced live: every ×3, ×5, big prize and Jackpot at any bet; ×2 only when it pays at least
+  // ANNOUNCE_X2_MIN (×2 is very common, so small ones would flood everyone's screen).
+  const ANNOUNCE_X2_MIN = 100;
+  function announceWin(game, label, payout, mult) {
+    if (!window.LuckyFeed || !(mult >= 2) || payout <= 0) return;
+    if (mult < 3 && payout < ANNOUNCE_X2_MIN) return;
     window.LuckyFeed.post({ game, label, amount: Math.floor(payout) });
   }
   document.addEventListener('keydown', (e) => {
