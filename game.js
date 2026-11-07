@@ -219,19 +219,30 @@
     state.history = state.history.slice(0, 30);
   }
 
+  // Every play in any game counts toward the free bonus (every BONUS_EVERY plays).
+  function countPlay() {
+    state.spins += 1;
+    return state.spins % BONUS_EVERY === 0;
+  }
+  function giveBonus() {
+    state.nu += BONUS_NU;
+    state.best = Math.max(state.best, state.nu);
+    addHistory('Play bonus', BONUS_NU);
+  }
+
   function spin() {
     if (spinning) return;
     const bet = Number(betSel.value);
     if (state.nu < bet) {
       setMessage(state.nu < minBet()
-        ? 'You are out of Nu. Open ☰ Menu → Recharge Nu to top up.'
+        ? 'You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.'
         : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller bet.`, 'lose');
       return;
     }
     ensureAudio();
     spinning = true;
     state.nu -= bet;
-    state.spins += 1;
+    const bonusDue = countPlay();
     render();
     setMessage('Spinning…');
 
@@ -254,12 +265,12 @@
       const seg = segmentAt(rotation);
       if (seg !== lastSeg) { lastSeg = seg; tick(); }
       if (t < 1) requestAnimationFrame(frame);
-      else finish(target, bet);
+      else finish(target, bet, bonusDue);
     }
     requestAnimationFrame(frame);
   }
 
-  function finish(index, bet) {
+  function finish(index, bet, bonusDue) {
     const seg = SEGMENTS[index];
     state.loseRun = isLose(seg) ? (state.loseRun || 0) + 1 : 0;
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
@@ -291,17 +302,16 @@
       chime([330, 247]);
     }
 
-    if (state.spins % BONUS_EVERY === 0) {
-      state.nu += BONUS_NU;
-      addHistory('Spin bonus', BONUS_NU);
-      text += ` +${fmtNu(BONUS_NU)} bonus for ${BONUS_EVERY} spins!`;
+    if (bonusDue) {
+      giveBonus();
+      text += ` +${fmtNu(BONUS_NU)} bonus for ${BONUS_EVERY} plays!`;
       if (kind !== 'jackpot') kind = 'win';
       if (net <= 0) setTimeout(() => chime([659, 880]), 500);
     }
     state.best = Math.max(state.best, state.nu);
     setMessage(text, kind);
     if (state.nu < minBet()) {
-      setTimeout(() => setMessage('You are out of Nu. Open ☰ Menu → Recharge Nu to top up.', 'lose'), 2200);
+      setTimeout(() => setMessage('You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.', 'lose'), 2200);
     }
     save();
     render();
@@ -323,7 +333,7 @@
 
     const done = state.spins % BONUS_EVERY;
     const left = BONUS_EVERY - done;
-    $('bonusText').textContent = `${left} more spin${left === 1 ? '' : 's'} to get a free ${fmtNu(BONUS_NU)}`;
+    $('bonusText').textContent = `${left} more play${left === 1 ? '' : 's'} to get a free ${fmtNu(BONUS_NU)}`;
     $('bonusFill').style.width = `${(done / BONUS_EVERY) * 100}%`;
 
     const hist = $('history');
@@ -452,20 +462,23 @@
     const action = e.target.closest('[data-action]')?.dataset.action;
     if (!action) return;
     setMenu(false);
+    if (action === 'nav') return; // the link itself switches the game
     if (action === 'contact') {
       if (window.LuckyChat) window.LuckyChat.open(); else chatUnavailable();
     } else if (action === 'note') {
       // Same content as the welcome pop-up and prize note, any time from the menu.
       $('noteId').textContent = state.playerId;
       $('noteWelcomeList').innerHTML = $('welcomeList').innerHTML;
-      fillPrizeLines($('notePrizeList'));
+      fillPrizeLines($('notePrizeGames'));
       $('noteDialog').showModal();
     } else if (action === 'logout') {
       if (window.LuckyAccount) window.LuckyAccount.logout();
-    } else if (action === 'recharge') {
-      $('rechargeMsg').textContent = '';
-      $('rechargeDialog').showModal();
     }
+  });
+  // Recharge is inside the chat now (button at the top of Contact us).
+  $('chatRecharge').addEventListener('click', () => {
+    $('rechargeMsg').textContent = '';
+    $('rechargeDialog').showModal();
   });
 
   $('rechargeForm').addEventListener('submit', async (e) => {
@@ -494,27 +507,52 @@
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
   // Prize note: what the three big slices pay at each bet (same formula the wheel uses).
-  function fillPrizeLines(list) {
-    list.replaceChildren();
-    const bigs = SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full);
-    for (const opt of betSel.options) {
-      const bet = Number(opt.value);
-      const li = document.createElement('li');
-      const b = document.createElement('strong');
-      b.textContent = `${fmtNu(bet)} bet`;
-      // non-breaking spaces keep each amount ("Nu 12,500") on one line
-      li.append(b, ` = Prize ${bigs.map((seg) => fmtNu(bigPrize(seg, bet)).replace(' ', '\u00a0')).join(', ')}`);
-      list.append(li);
+  // Prize notes. Each game adds itself to window.SOMA_PRIZES with an id (its view), a title and the
+  // prizes it pays for a bet. The first time a player opens a game, that game's note pops up once;
+  // ☰ → Note lists every game. Lines read "Nu 20 bet = Prize Nu 40, Nu 400, ...".
+  window.SOMA_PRIZES = window.SOMA_PRIZES || [];
+  window.SOMA_PRIZES.unshift({
+    id: 'spin',
+    title: '🎡 SOMA Spin',
+    prizes: (bet) => SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full).map((seg) => bigPrize(seg, bet)),
+  });
+  function fillPrizeLines(box, onlyId) {
+    box.replaceChildren();
+    for (const g of window.SOMA_PRIZES) {
+      if (onlyId && g.id !== onlyId) continue;
+      const h = document.createElement('h4');
+      h.textContent = g.title;
+      const list = document.createElement('ul');
+      list.className = 'prize-note-list';
+      for (const opt of betSel.options) {
+        const bet = Number(opt.value);
+        const li = document.createElement('li');
+        const b = document.createElement('strong');
+        b.textContent = `${fmtNu(bet)} bet`;
+        // non-breaking spaces keep each amount ("Nu 12,500") on one line
+        li.append(b, ` = Prize ${g.prizes(bet).map((n) => fmtNu(n).replace(' ', '\u00a0')).join(', ')}`);
+        list.append(li);
+      }
+      if (onlyId) box.append(list); // the pop-up title already names the game
+      else box.append(h, list);
     }
   }
-  function showPrizeNote() {
-    fillPrizeLines($('prizeNoteList'));
-    const dlg = $('prizeNoteDialog');
-    state.prizeNoteSeen = true; // shown once per player
+  // Which games' notes this player has seen, e.g. { spin: true, drop: true }.
+  const seenNotes = () => (state.prizeNoteSeen && typeof state.prizeNoteSeen === 'object' ? state.prizeNoteSeen : {});
+  let accountReady = !(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase); // online: wait until logged in
+  // Shows the note for the game on screen, once per player per game.
+  function maybeShowGameNote() {
+    const id = currentView;
+    const g = window.SOMA_PRIZES.find((x) => x.id === id);
+    if (!accountReady || !g || seenNotes()[id] || document.querySelector('dialog[open]')) return;
+    fillPrizeLines($('prizeNoteGames'), id);
+    $('prizeNoteTitle').textContent = `*Note: ${g.title.replace(/^\S+\s/, '')}`;
+    state.prizeNoteSeen = { ...seenNotes(), [id]: true };
     save();
-    dlg.showModal();
+    $('prizeNoteDialog').showModal();
   }
-  $('welcomeDialog').addEventListener('close', showPrizeNote);
+  // After the welcome pop-up, show the note if the player is already in a game.
+  $('welcomeDialog').addEventListener('close', () => setTimeout(maybeShowGameNote, 0));
 
   function startSignup() {
     const dlg = $('signupDialog');
@@ -569,7 +607,7 @@
     e.currentTarget.setAttribute('aria-pressed', String(soundOn));
   });
   document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !document.querySelector('dialog[open]')
+    if (e.code === 'Space' && currentView === 'spin' && !document.querySelector('dialog[open]')
         && !['SELECT', 'BUTTON', 'INPUT', 'TEXTAREA', 'SUMMARY'].includes(e.target.tagName)) {
       e.preventDefault();
       spin();
@@ -586,10 +624,28 @@
     render();
   }
 
+  // ---------- lobby and games (one page: #spin, #drop, or the lobby) ----------
+  let currentView = 'home';
+  function showView() {
+    const name = { '#spin': 'spin', '#drop': 'drop' }[location.hash] || 'home';
+    currentView = name;
+    document.querySelectorAll('.view').forEach((v) => { v.hidden = v.id !== `view-${name}`; });
+    const view = $(`view-${name}`);
+    $('pageTitle').textContent = view.dataset.title;
+    document.title = name === 'home' ? 'SOMA Games' : `${view.dataset.title} · SOMA Games`;
+    document.body.dataset.view = name;
+    if (name === 'spin') drawWheel();
+    window.dispatchEvent(new CustomEvent('soma:view', { detail: name }));
+    setTimeout(maybeShowGameNote, 0); // after every game has loaded
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', showView);
+
   window.LuckySpin = {
     // ----- accounts (used by online.js) -----
     get localOwner() { return state.uid || null; },
-    get prizeNoteSeen() { return !!state.prizeNoteSeen; },
+    // Called by online.js once the player is logged in (notes wait until then).
+    accountReady() { accountReady = true; setTimeout(maybeShowGameNote, 0); },
     exportState() {
       const out = {};
       for (const k of ACCOUNT_FIELDS) if (state[k] !== undefined) out[k] = state[k];
@@ -617,7 +673,37 @@
     },
     clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
     showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
-    showPrizeNote,
+    maybeShowGameNote,
+    // ----- shared wallet for the other SOMA games -----
+    get view() { return currentView; },
+    // Takes a bet from the balance. Returns { ok, bonusDue } (bonusDue: this play earns the free bonus).
+    spend(amount) {
+      if (!(amount > 0) || state.nu < amount) return { ok: false };
+      state.nu -= amount;
+      const bonusDue = countPlay();
+      save();
+      render();
+      return { ok: true, bonusDue };
+    },
+    // Pays out a result, records it in the history, and adds the bonus if due.
+    settle({ payout, net, label, bonusDue }) {
+      state.nu += payout;
+      addHistory(label, net);
+      if (bonusDue) giveBonus();
+      state.best = Math.max(state.best, state.nu);
+      save();
+      render();
+    },
+    celebrate(level) {
+      ensureAudio();
+      if (level === 'jackpot') { confetti(500); chime([523, 659, 784, 1047, 1319, 1568, 2093]); }
+      else if (level === 'big') { confetti(120); chime([523, 659, 784, 1047]); }
+      else if (level === 'win') chime([523, 659, 784]);
+      else if (level === 'bonus') chime([659, 880]);
+      else chime([330, 247]);
+    },
+    get bonusNu() { return BONUS_NU; },
+    get bonusEvery() { return BONUS_EVERY; },
     // Short alert sound for the owner's notifications (works once sound has been allowed by a tap).
     alertSound() { if (audio) { ensureAudio(); chime([880, 1175, 1568]); } },
     get playerId() { return state.playerId; },
@@ -653,9 +739,9 @@
   drawWheel();
   render();
   save();
+  showView();
   // With online accounts, online.js shows the log-in / create-account pop-up instead.
   if (!(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase)) {
     if (!state.gender) startSignup();
-    else if (!state.prizeNoteSeen) showPrizeNote();
   }
 })();

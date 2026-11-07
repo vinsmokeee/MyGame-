@@ -1,9 +1,22 @@
-# Lucky Spin
+# SOMA Games
 
-A browser prize-wheel game played with **Nu** (play points). Open `index.html` in a modern browser, or visit
-https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is needed.
+One link, one account, one Nu balance, several games. Open `index.html` in a modern browser, or visit
+https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 
-## How to play
+- **Lobby** (`index.html`): log in or create an account, see your balance and ID, then pick a game.
+  `#spin` opens SOMA Spin, `#drop` opens SOMA Drop. The ☰ menu (All games, Contact us / Recharge Nu, Note, Log out) and the
+  free **Nu 20 every 10 plays** bonus are shared by all games.
+- **One wallet:** recharges and Nu added from the owner page work in every game (`window.LuckySpin.spend/settle`).
+- **Adding a game:** add a `view-<name>` section and a lobby card in `index.html`, and a script that uses the
+  shared wallet (see `drop.js`).
+
+## SOMA Drop (`drop.js`)
+A Plinko-style board with 12 rows of pins. Bets Nu 20/50/100/500. Layout JACKPOT ×5 ×3 ×2 ×2 ×0.5 ×0.5 ×0.5 ×2 ×2 ×3 ×5
+JACKPOT: ×0.5 (~85%), ×2 (~11%), ×3 (~3%), ×5 (~0.6%), JACKPOT ×100 (1 in 2,048). Each slot's chance is set in
+`SLOTS` (`p`) in `drop.js`, and the ball's path is drawn to that slot.
+Players get back about 82% of their bets over time (plus the shared play bonus).
+
+## SOMA Spin
 - Players start with Nu 200, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).
 - Never more than 2 LOSE in a row (about 41% of spins are LOSE). ×0.5 about 1 in 3, ×2 1 in 8, ×3 1 in 20,
   ×5 1 in 50. Three big prizes pay their listed amount at a Nu 100 bet (smaller share at lower bets, 5× at Nu 500): Nu 1,000 (~1 in 180),
@@ -15,7 +28,7 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 - Each player has a unique 6-digit **ID number** (shown as "Your ID"), so the owner can find them even if names repeat.
 - Every 10 spins gives a free **Nu 20** bonus.
 - Players can set their own name (✏️ Edit name).
-- The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
+- The ☰ menu has **Contact us / Recharge Nu**: the chat with the owner (text and photos), with a **💰 Recharge Nu** button at the top that sends a recharge request (minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.
 
 ## Owner tools (`admin.html`)
