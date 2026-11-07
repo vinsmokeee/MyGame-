@@ -85,7 +85,9 @@ async function start() {
       } else {
         user = (await fb.createUserWithEmailAndPassword(auth, toEmail(username), password)).user;
       }
-      await enter(user, 'created', { username, gender });
+      // One welcome gift per phone: devices/{deviceId} remembers the first account made on this phone.
+      const gift = await claimWelcomeGift(user.uid, username);
+      await enter(user, 'created', { username, gender, gift });
     } catch (err) {
       const code = err && err.code;
       msg.textContent = code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use'
@@ -122,6 +124,19 @@ async function start() {
     }
   });
 
+  // Returns true if this phone has not had a welcome gift yet (and records it), false otherwise.
+  async function claimWelcomeGift(newUid, username) {
+    try { if (localStorage.getItem('soma.giftUsed')) return false; } catch (_) { /* ignore */ }
+    const ref = fb.doc(db, 'devices', game.deviceId());
+    try {
+      const snap = await Promise.race([fb.getDoc(ref), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]);
+      if (snap.exists() && snap.data().uid !== newUid) return false;
+      if (!snap.exists()) fb.setDoc(ref, { uid: newUid, username, createdAt: fb.serverTimestamp() }).catch(() => {});
+    } catch (_) { /* offline or slow: still give the gift rather than block a new player */ }
+    try { localStorage.setItem('soma.giftUsed', '1'); } catch (_) { /* ignore */ }
+    return true;
+  }
+
   // ---------- loading an account into the game ----------
   async function enter(user, mode, extra = {}) {
     uid = user.uid;
@@ -155,7 +170,7 @@ async function start() {
     const idReady = claimId();
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     game.accountReady();
-    if (mode === 'created') game.showWelcome();
+    if (mode === 'created') game.showWelcome(extra.gift === false);
     idReady.finally(saveNow);
   }
 
@@ -236,8 +251,57 @@ async function start() {
     send: (text) => sendMessage({ text: text.slice(0, MAX_TEXT) }, text),
   };
 
+  // ---------- big-win announcements ----------
+  // Wins of ×2 or more (at least Nu 100) are posted to wins/; every other player online sees a short
+  // message such as "Tashi (ID 627182) hit ×3 in SOMA Drop and won Nu 300" that fades after ~3.5 s.
+  const feedQueue = [];
+  let feedBusy = false;
+  function feedText(w) {
+    const who = `${w.name || 'A player'}${w.playerId ? ` (ID ${w.playerId})` : ''}`;
+    const nu = `Nu ${Number(w.amount).toLocaleString('en-US')}`;
+    if (w.label === 'JACKPOT') return `🏆 ${who} won the JACKPOT in ${w.game}: ${nu}!`;
+    if (w.label) return `🎉 ${who} hit ${w.label} in ${w.game} and won ${nu}`;
+    return `🎉 ${who} won ${nu} in ${w.game}`;
+  }
+  function showNextWin() {
+    if (feedBusy || !feedQueue.length) return;
+    feedBusy = true;
+    const el = $('winToast');
+    el.textContent = feedText(feedQueue.shift());
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => { el.classList.remove('show'); feedBusy = false; setTimeout(showNextWin, 400); }, 3600);
+  }
+  window.LuckyFeed = {
+    post(win) {
+      if (!uid) return;
+      fb.addDoc(fb.collection(db, 'wins'), {
+        uid, name: game.name, playerId: game.playerId, game: win.game, label: win.label || '', amount: win.amount,
+        createdAt: fb.serverTimestamp(),
+      }).catch(() => {});
+    },
+  };
+  function listenForWins() {
+    const since = fb.Timestamp.fromDate(new Date());
+    fb.onSnapshot(
+      fb.query(fb.collection(db, 'wins'), fb.where('createdAt', '>', since), fb.orderBy('createdAt'), fb.limitToLast(20)),
+      (snap) => {
+        for (const ch of snap.docChanges()) {
+          const w = ch.doc.data();
+          if (ch.type !== 'added' || w.uid === uid) continue; // players see their own wins on the board
+          feedQueue.push(w);
+          if (feedQueue.length > 3) feedQueue.shift(); // keep it to the latest few
+        }
+        showNextWin();
+      },
+      () => {},
+    );
+  }
+
   function startListeners() {
     ready();
+    try { listenForWins(); } catch (_) { /* announcements are optional; chat and recharges keep working */ }
     setNote('');
     input.disabled = false;
     photo.disabled = false;

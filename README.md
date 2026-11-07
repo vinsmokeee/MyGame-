@@ -10,11 +10,14 @@ https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 - **Adding a game:** add a `view-<name>` section and a lobby card in `index.html`, and a script that uses the
   shared wallet (see `drop.js`).
 
+- **Big-win announcements:** wins of ×2 or more (at least Nu 100) in any game are posted to `wins/` and shown to
+  every other player online for about 3.5 seconds, e.g. "Tashi (ID 627182) hit ×3 in SOMA Drop and won Nu 300".
+- The owner page shows each player's spins and drops separately (`drops` in the account).
+
 ## SOMA Drop (`drop.js`)
-A Plinko-style board with 12 rows of pins. Bets Nu 20/50/100/500. Layout JACKPOT ×5 ×3 ×2 ×2 ×0.5 ×0.5 ×0.5 ×2 ×2 ×3 ×5
-JACKPOT: ×0.5 (~85%), ×2 (~11%), ×3 (~3%), ×5 (~0.6%), JACKPOT ×100 (1 in 2,048). Each slot's chance is set in
-`SLOTS` (`p`) in `drop.js`, and the ball's path is drawn to that slot.
-Players get back about 82% of their bets over time (plus the shared play bonus).
+A Plinko-style board with 12 rows of pins. Bets Nu 20/50/100/500. Layout JACKPOT ×5 ×3 ×2 ×2 ×0.3 ×0.3 ×0.3 ×2 ×2 ×3 ×5
+JACKPOT. Never more than 3 ×0.3 in a row: the next ball lands on ×2 or ×3. ×2 about 1 in 4, ×3 1 in 31, ×5 1 in 170,
+JACKPOT ×100 about 1 in 2,500; players get back about 86–95%. Chances are `p` / `f` in `SLOTS` in `drop.js`. Sound effects for the drop, pins and landing; 🔊 toggles sound.
 
 ## SOMA Spin
 - Players start with Nu 200, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).

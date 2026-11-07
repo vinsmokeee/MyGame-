@@ -132,7 +132,11 @@ async function start() {
       li.querySelector('.idtag').textContent = `ID ${p.playerId || '?'}`;
       li.querySelector('.nm').textContent = p.name || 'Unnamed';
       li.querySelector('.meta').textContent = fmtTime(p.updatedAt);
-      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${p.spins || 0} spins`].filter(Boolean).join(' · ');
+      // "spins" in the account counts every play; drops are counted separately.
+      const drops = p.drops || 0;
+      const twins = p.deviceId ? [...players.values()].filter((o) => o.uid !== p.uid && o.deviceId === p.deviceId) : [];
+      li.querySelector('.twin').textContent = twins.length ? `⚠ Same phone as ${twins.map((o) => '@' + (o.username || o.name || '?')).join(', ')}` : '';
+      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${Math.max(0, (p.spins || 0) - drops)} spins`, `${drops} drops`].filter(Boolean).join(' · ');
       ul.append(li);
     }
   }
@@ -143,6 +147,7 @@ async function start() {
       li.innerHTML = `
         <div class="item-top"><span class="who"><span class="idtag"></span><span class="nm"></span></span><span class="meta"></span></div>
         <div class="sub"></div>
+        <div class="twin"></div>
         <form class="actions">
           <input type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
           <button class="primary small" type="submit">Add Nu</button>

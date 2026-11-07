@@ -278,6 +278,7 @@
     state.nu += payout;
     addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : nice(seg.label), net);
     spinning = false;
+    announceWin('SOMA Spin', seg.jackpot ? 'JACKPOT' : seg.full ? '' : nice(seg.label), payout, seg.full || seg.mult >= 2);
 
     let text;
     let kind = '';
@@ -623,11 +624,23 @@
     drawWheel();
     render();
   });
-  $('sound').addEventListener('click', (e) => {
-    soundOn = !soundOn;
-    e.currentTarget.textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
-    e.currentTarget.setAttribute('aria-pressed', String(soundOn));
-  });
+  function setSound(on) {
+    soundOn = on;
+    $('sound').textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
+    $('sound').setAttribute('aria-pressed', String(soundOn));
+    const d = $('dropSound');
+    if (d) { d.textContent = soundOn ? '🔊' : '🔇'; d.setAttribute('aria-pressed', String(soundOn)); }
+  }
+  $('sound').addEventListener('click', () => setSound(!soundOn));
+  if ($('dropSound')) $('dropSound').addEventListener('click', () => setSound(!soundOn));
+
+  // Big wins are shared with other players online (online.js shows them as a short message).
+  // Only wins of ×2 or more that pay at least ANNOUNCE_MIN, to keep the messages meaningful.
+  const ANNOUNCE_MIN = 100;
+  function announceWin(game, label, payout, isWin) {
+    if (!isWin || payout < ANNOUNCE_MIN || !window.LuckyFeed) return;
+    window.LuckyFeed.post({ game, label, amount: Math.floor(payout) });
+  }
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && currentView === 'spin' && !document.querySelector('dialog[open]')
         && !['SELECT', 'BUTTON', 'INPUT', 'TEXTAREA', 'SUMMARY'].includes(e.target.tagName)) {
@@ -638,7 +651,17 @@
 
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   // Fields saved to the player's online account (so they can log in on any phone).
-  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'history', 'grants', 'prizeNoteSeen'];
+  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'history', 'grants', 'prizeNoteSeen', 'deviceId'];
+  // A hidden ID for this phone/browser (kept after log out), used to give the welcome gift once per phone.
+  function deviceId() {
+    let id = null;
+    try { id = localStorage.getItem('soma.device'); } catch (_) { /* ignore */ }
+    if (!id) {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
+      try { localStorage.setItem('soma.device', id); } catch (_) { /* ignore */ }
+    }
+    return id;
+  }
   function refreshAll() {
     save();
     buildLegend();
@@ -683,9 +706,15 @@
       refreshAll();
     },
     // A new account: fresh start with the Nu 200 welcome gift.
-    startFresh({ username, gender, owner }) {
+    // gift: false when this phone already received the welcome gift for another account.
+    startFresh({ username, gender, owner, gift = true }) {
       state = normalize(null);
-      Object.assign(state, { name: username, username, gender, uid: owner });
+      Object.assign(state, { name: username, username, gender, uid: owner, deviceId: deviceId() });
+      if (!gift) {
+        state.nu = 0;
+        state.best = 0;
+        state.history = [{ label: 'Welcome gift already used on this phone', net: 0 }];
+      }
       refreshAll();
     },
     // Turn this phone's existing progress into an account (keeps Nu, ID and history).
@@ -694,14 +723,20 @@
       refreshAll();
     },
     clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
-    showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
+    showWelcome(noGift) {
+      $('welcomeId').textContent = state.playerId;
+      $('welcomeNoGift').hidden = !noGift;
+      $('welcomeDialog').showModal();
+    },
+    deviceId,
     maybeShowGameNote,
     // ----- shared wallet for the other SOMA games -----
     get view() { return currentView; },
     // Takes a bet from the balance. Returns { ok, bonusDue } (bonusDue: this play earns the free bonus).
-    spend(amount) {
+    spend(amount, game) {
       if (!(amount > 0) || state.nu < amount) return { ok: false };
       state.nu -= amount;
+      if (game === 'drop') state.drops = (state.drops || 0) + 1;
       const bonusDue = countPlay();
       save();
       render();
@@ -725,6 +760,13 @@
       else chime([330, 247]);
     },
     get bonusNu() { return BONUS_NU; },
+    announceWin,
+    // Sound effects for other games (respect the shared Sound on/off).
+    sound: {
+      start() { ensureAudio(); },
+      beep(freq, start, dur, vol, type) { if (soundOn) beep(freq, start, dur, vol, type); },
+      chime(notes) { if (soundOn) chime(notes); },
+    },
     get bonusEvery() { return BONUS_EVERY; },
     // Short alert sound for the owner's notifications (works once sound has been allowed by a tap).
     alertSound() { if (audio) { ensureAudio(); chime([880, 1175, 1568]); } },
