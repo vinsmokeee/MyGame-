@@ -101,6 +101,8 @@ async function start() {
   }
 
   // ----- giving Nu -----
+  // "Recharge of Nu X successfully added" messages are the recharge history and can't be deleted.
+  const isRechargeRecord = (m) => typeof m.text === 'string' && /^Recharge of Nu [\d,]+ successfully added$/.test(m.text);
   const rechargeText = (amount) => `Recharge of ${fmtNu(amount)} successfully added`;
   async function giveNu(uid, amount) {
     if (!Number.isInteger(amount) || amount < 1 || amount > MAX_GIFT) {
@@ -214,7 +216,7 @@ async function start() {
       fb.query(fb.collection(chatRef, 'messages'), fb.orderBy('createdAt'), fb.limitToLast(200)),
       (snap) => {
         const msgs = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }));
-        renderMessages($('threadList'), msgs, 'admin', 'No messages yet.', (m) => deleteMessage(uid, m, msgs));
+        renderMessages($('threadList'), msgs, 'admin', 'No messages yet.', (m) => deleteMessage(uid, m, msgs), isRechargeRecord);
         if (first) $('threadList').scrollTop = $('threadList').scrollHeight;
         first = false;
         if ((chats.find((x) => x.uid === uid) || {}).unread) {

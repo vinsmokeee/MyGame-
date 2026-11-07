@@ -68,8 +68,10 @@ service cloud.firestore {
           && (('text' in request.resource.data && request.resource.data.text.size() > 0)
               || 'image' in request.resource.data)
           && request.resource.data.createdAt == request.time;
-        // The owner can delete their own messages and photos (e.g. sent to the wrong player).
-        allow delete: if isAdmin() && resource.data.from == 'admin';
+        // The owner can delete messages and photos they sent by hand (e.g. to the wrong player).
+        // Recharge records ("Recharge of Nu X successfully added") are kept as history.
+        allow delete: if isAdmin() && resource.data.from == 'admin'
+          && (!('text' in resource.data) || !resource.data.text.matches('^Recharge of Nu [0-9,]+ successfully added$'));
       }
     }
   }

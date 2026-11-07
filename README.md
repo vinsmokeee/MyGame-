@@ -21,7 +21,7 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 ## Owner tools (`admin.html`)
 Sign in with the owner's Firebase email/password to:
 - **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
-- **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat. Your own messages and photos have a **Delete** link (e.g. sent to the wrong player).
+- **Inbox:** read and reply to player chats (text and photos), and give Nu from inside a chat. Messages and photos you send by hand have a **Delete** link (e.g. sent to the wrong player); recharge records stay as history.
 
 When the owner is signed in on `admin.html` on the same phone, the game also shows **🛠 Owner page** in the ☰ menu
 and a banner (with a sound) whenever a player sends a recharge request or message; **Open** goes straight to that
