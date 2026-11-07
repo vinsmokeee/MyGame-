@@ -11,6 +11,7 @@
   <header class="top">
     <div class="brand">
       <button id="menuBtn" class="icon-btn has-dot" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰<span class="unread-dot" hidden aria-label="New message"></span><span id="ownerDot" class="owner-dot" hidden aria-label="New player message"></span></button>
+      <button id="profileBtn" class="avatar-btn" type="button" aria-label="Your profile"><span id="avatarInitial">?</span></button>
       <h1 id="pageTitle">SOMA Games</h1>
     </div>
     <div class="stats">
@@ -218,6 +219,29 @@
   <div id="notePrizeGames" class="prize-games"></div>
   <p class="welcome-bye">Tashi Delek, Good Luck 🍀</p>
   <form method="dialog" class="row end"><button class="primary" type="submit">Close</button></form>
+</dialog>
+
+<dialog id="profileDialog" class="dialog profile-card">
+  <div class="profile-top">
+    <span class="avatar-big" aria-hidden="true"><span id="pfInitial">?</span></span>
+    <div>
+      <h2 id="pfName"></h2>
+      <div id="pfUser" class="pf-user"></div>
+    </div>
+  </div>
+  <div class="welcome-id">Player ID<strong id="pfId"></strong>
+    <button id="pfCopy" class="secondary small" type="button">Copy ID</button>
+  </div>
+  <dl class="pf-stats">
+    <div><dt>Balance</dt><dd id="pfNu"></dd></div>
+    <div><dt>Best</dt><dd id="pfBest"></dd></div>
+    <div><dt>Plays</dt><dd id="pfPlays"></dd></div>
+    <div><dt>Gender</dt><dd id="pfGender"></dd></div>
+  </dl>
+  <form method="dialog" class="row end">
+    <button id="pfEdit" class="secondary" type="button">✏️ Edit name</button>
+    <button class="primary" type="submit">Close</button>
+  </form>
 </dialog>
 
 <dialog id="nameDialog" class="dialog">

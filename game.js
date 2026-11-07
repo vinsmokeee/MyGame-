@@ -327,6 +327,7 @@
     $('best').textContent = fmtNu(state.best);
     $('spins').textContent = state.spins.toLocaleString('en-US');
     $('playerName').textContent = state.name;
+    $('avatarInitial').textContent = (state.name || '?').trim().charAt(0).toUpperCase() || '?';
     $('playerId').textContent = state.playerId;
     spinBtn.disabled = spinning || state.nu < Number(betSel.value);
     betSel.disabled = spinning;
@@ -574,6 +575,27 @@
     $('welcomeId').textContent = state.playerId;
     $('welcomeDialog').showModal();
   });
+
+  // ---------- profile card (round button next to the menu) ----------
+  function showProfile() {
+    const initial = (state.name || '?').trim().charAt(0).toUpperCase() || '?';
+    $('pfInitial').textContent = initial;
+    $('pfName').textContent = state.name;
+    $('pfUser').textContent = state.username ? `@${state.username}` : '';
+    $('pfId').textContent = state.playerId;
+    $('pfNu').textContent = fmtNu(state.nu);
+    $('pfBest').textContent = fmtNu(state.best);
+    $('pfPlays').textContent = state.spins.toLocaleString('en-US');
+    $('pfGender').textContent = state.gender || '—';
+    $('pfCopy').textContent = 'Copy ID';
+    $('profileDialog').showModal();
+  }
+  $('profileBtn').addEventListener('click', showProfile);
+  $('pfCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(state.playerId); $('pfCopy').textContent = 'Copied ✓'; }
+    catch (_) { $('pfCopy').textContent = 'Copy failed'; }
+  });
+  $('pfEdit').addEventListener('click', () => { $('profileDialog').close(); $('editName').click(); });
 
   $('editName').addEventListener('click', () => {
     $('nameHint').textContent = state.username
