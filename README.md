@@ -4,7 +4,7 @@ One link, one account, one Nu balance, several games. Open `index.html` in a mod
 https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 
 - **Lobby** (`index.html`): log in or create an account, see your balance and ID, then pick a game.
-  `#spin` opens SOMA Spin, `#drop` opens SOMA Drop. The ☰ menu (Contact us, Note, Recharge, Log out) and the
+  `#spin` opens SOMA Spin, `#drop` opens SOMA Drop. The ☰ menu (All games, Contact us / Recharge Nu, Note, Log out) and the
   free **Nu 20 every 10 plays** bonus are shared by all games.
 - **One wallet:** recharges and Nu added from the owner page work in every game (`window.LuckySpin.spend/settle`).
 - **Adding a game:** add a `view-<name>` section and a lobby card in `index.html`, and a script that uses the
