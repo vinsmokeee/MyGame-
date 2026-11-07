@@ -185,6 +185,25 @@ a.link { color: var(--accent); }
 .field-hint.center { text-align: center; margin: 12px 0 0; }
 button.wide { width: 100%; padding: 12px; margin-top: 4px; }
 
+/* ---------- owner tools in the game (only shown to the signed-in owner) ---------- */
+a.drawer-item { display: block; text-decoration: none; }
+.count-pill { background: var(--lose); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: .8rem; margin-left: 6px; }
+.owner-dot {
+  position: absolute; bottom: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid #fff;
+}
+.owner-toast {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 60;
+  width: min(440px, calc(100vw - 24px)); display: flex; align-items: center; gap: 10px;
+  background: #fff7d6; color: #2a2100; border-radius: 14px; padding: 12px 12px 12px 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .55); animation: toast-in .25s ease-out;
+}
+.owner-toast-body { flex: 1; min-width: 0; font-size: .92rem; line-height: 1.35; }
+.owner-toast-body div { white-space: pre-line; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.owner-toast-open { background: #2a2100; color: #ffd447; border-radius: 8px; padding: 8px 14px; font-weight: 800; text-decoration: none; flex: none; }
+.owner-toast-close { background: none; border: 0; color: #2a2100; font-size: 1.1rem; cursor: pointer; padding: 4px; flex: none; }
+@keyframes toast-in { from { transform: translate(-50%, -20px); opacity: 0; } }
+
 /* ---------- chat ---------- */
 .has-dot { position: relative; }
 .unread-dot {

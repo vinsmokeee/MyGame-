@@ -4,6 +4,8 @@ import { loadFirebase, compressImage, renderMessages, fmtNu, fmtTime, MAX_TEXT }
 const cfg = window.CHAT_CONFIG;
 const $ = (id) => document.getElementById(id);
 const baseTitle = document.title;
+// admin.html?chat=<player uid> opens that player's chat (used by the game's owner notifications).
+let pendingChat = new URLSearchParams(location.search).get('chat');
 const MAX_GIFT = 1000000000;
 
 if (cfg && cfg.firebase) start().catch(() => { $('notReady').hidden = false; });
@@ -71,6 +73,13 @@ async function start() {
       (snap) => {
         chats = snap.docs.map((d) => ({ uid: d.id, ...d.data({ serverTimestamps: 'estimate' }) }));
         renderIndex();
+        if (pendingChat) {
+          const uid = pendingChat;
+          pendingChat = null;
+          history.replaceState(null, '', location.pathname);
+          showTab('inbox');
+          openThread(uid);
+        }
       },
     ));
   });

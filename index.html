@@ -10,7 +10,7 @@
 <main class="app">
   <header class="top">
     <div class="brand">
-      <button id="menuBtn" class="icon-btn has-dot" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰<span class="unread-dot" hidden aria-label="New message"></span></button>
+      <button id="menuBtn" class="icon-btn has-dot" type="button" aria-label="Menu" aria-controls="menu" aria-expanded="false">☰<span class="unread-dot" hidden aria-label="New message"></span><span id="ownerDot" class="owner-dot" hidden aria-label="New player message"></span></button>
       <h1>Lucky Spin</h1>
     </div>
     <div class="stats">
@@ -68,6 +68,7 @@
   <button class="drawer-item" type="button" data-action="contact">💬 Contact us <span class="unread-dot inline" hidden aria-label="New message"></span></button>
   <button class="drawer-item" type="button" data-action="note">📝 Note</button>
   <button class="drawer-item" type="button" data-action="recharge">💰 Recharge Nu</button>
+  <a class="drawer-item" href="admin.html" data-action="owner" hidden>🛠 Owner page <span id="ownerCount" class="count-pill" hidden></span></a>
   <button class="drawer-item" type="button" data-action="logout" hidden>🚪 Log out</button>
 </nav>
 
@@ -210,6 +211,15 @@
   </form>
 </section>
 <div id="lightbox" class="lightbox" hidden><img alt="Photo"></div>
+
+<div id="ownerToast" class="owner-toast" role="alert" hidden>
+  <div class="owner-toast-body">
+    <strong id="ownerToastTitle"></strong>
+    <div id="ownerToastText"></div>
+  </div>
+  <a id="ownerToastOpen" class="owner-toast-open" href="admin.html">Open</a>
+  <button id="ownerToastClose" class="owner-toast-close" type="button" aria-label="Dismiss">✕</button>
+</div>
 
 <canvas id="confetti" aria-hidden="true"></canvas>
 <script src="chat-config.js"></script>
