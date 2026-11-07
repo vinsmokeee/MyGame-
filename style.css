@@ -258,6 +258,28 @@ a.drawer-item { display: block; text-decoration: none; }
 .prize-games .prize-note-list { margin-bottom: 4px; text-align: left; }
 .prize-note .prize-games { max-height: 55vh; overflow-y: auto; }
 
+/* ---------- profile ---------- */
+.avatar-btn {
+  width: 42px; height: 42px; border-radius: 50%; flex: none; cursor: pointer; padding: 0;
+  border: 2px solid #f4d27c; background: radial-gradient(circle at 35% 30%, #fff1c4, #d4a63a 55%, #7a5612);
+  color: #2a1d00; font: inherit; font-weight: 900; font-size: 1.15rem; box-shadow: 0 3px 10px rgba(0, 0, 0, .45);
+}
+.avatar-btn:hover { filter: brightness(1.08); }
+.profile-card .profile-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.profile-card h2 { margin: 0; color: var(--text); font-size: 1.3rem; text-transform: none; letter-spacing: 0; }
+.avatar-big {
+  width: 64px; height: 64px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  border: 3px solid #f4d27c; background: radial-gradient(circle at 35% 30%, #fff1c4, #d4a63a 55%, #7a5612);
+  color: #2a1d00; font-weight: 900; font-size: 1.8rem;
+}
+.pf-user { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+.profile-card .welcome-id { text-align: center; }
+.profile-card .welcome-id button { margin-top: 6px; }
+.pf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 6px; }
+.pf-stats div { background: var(--bg); border-radius: 10px; padding: 8px 10px; }
+.pf-stats dt { color: var(--muted); font-size: .75rem; }
+.pf-stats dd { margin: 2px 0 0; font-weight: 700; }
+
 /* ---------- chat ---------- */
 .msg-delete { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; opacity: .9; }
 .has-dot { position: relative; }
