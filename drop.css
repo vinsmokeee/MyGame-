@@ -1,0 +1,28 @@
+/* SOMA Drop: extra styles on top of style.css */
+.app.drop { max-width: 520px; grid-template-columns: 1fr; grid-template-areas: "top" "profile" "nav" "stage" "side"; }
+.site-nav { grid-area: nav; display: flex; gap: 8px; }
+.secondary-link {
+  flex: 1; text-align: center; text-decoration: none; background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px; font: inherit; cursor: pointer; position: relative;
+}
+.secondary-link:hover { border-color: var(--accent); }
+.hint.center { text-align: center; margin: 0; }
+
+.board { width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 6px; }
+#board { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; }
+
+.drop .controls { width: 100%; flex-wrap: nowrap; }
+.bets { display: flex; gap: 6px; flex: 1; }
+.bets button {
+  flex: 1; padding: 10px 0; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; min-width: 0;
+}
+.bets button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.drop-btn { padding: 12px 22px; font-size: 1.05rem; border-radius: 12px; }
+
+.prizes table.pay { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+.pay th, .pay td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line); }
+.pay th { color: var(--muted); font-weight: 600; }
+.pay td:first-child, .pay th:first-child { text-align: left; color: var(--muted); }
+.pay .jp { color: #ff7bf0; font-weight: 700; }
+.prizes .prize-note-list li:last-child { color: inherit; font-weight: normal; }

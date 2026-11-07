@@ -18,6 +18,17 @@ https://vinsmokeee.github.io/MyGame-/ when GitHub Pages is on. No build step is 
 - The ☰ menu has **Contact us** (chat with the owner, text and photos) and **Recharge Nu** (sends the owner a request, minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.
 
+## SOMA Drop (`drop.html`)
+A Plinko-style points game on the same site. Players log in with their Lucky Spin username and password, so
+they have the same name and ID in both games (☰ Menu → 🎯 SOMA Drop, and 🎡 Lucky Spin to go back).
+- Pick a bet (Nu 10/50/100/500), press DROP or tap the board. 13 slots from the edges in: JACKPOT ×100, ×5, ×3, ×2, then ×0.5 in the middle five. The slot is chosen fairly (12 left/right coin flips) and the ball animates down that path; players get back about 82% of their bets over time.
+- Drop has its own balance (starts at Nu 1,000, free Nu 500 refill when out), saved to the player's account as
+  `dropNu`, `dropBest`, `drops`. It is separate from the Lucky Spin balance.
+- **Contact us** in Drop uses the same chat as Lucky Spin, so messages arrive in the same owner inbox.
+- After adding Drop, publish the updated `firestore.rules` (it allows the three new fields). Until then the
+  balance is kept only on the player's phone.
+- Edit the slots, bets, start balance and the prize lines at the top of `drop.js`.
+
 ## Owner tools (`admin.html`)
 Sign in with the owner's Firebase email/password to:
 - **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
@@ -37,7 +48,8 @@ Until `chat-config.js` is filled in, Contact us shows a "not available yet" note
 Photos are shrunk in the browser and stored with the message, so Cloud Storage (a paid feature) is not needed.
 
 ## Files
-- `index.html`, `style.css`, `game.js`: the game
+- `index.html`, `style.css`, `game.js`: the Lucky Spin game
+- `drop.html`, `drop.css`, `drop.js`: SOMA Drop
 - `online.js`: player chat, owner gifts and profile sync
 - `admin.html`, `admin.js`: owner tools
 - `shared.js`: chat helpers used by both
