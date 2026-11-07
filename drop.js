@@ -86,14 +86,14 @@
 
   // ---------- board ----------
   const W = 360;
-  const H = 520;
+  const H = 560;
   const N = SLOTS.length;
   const ROWS = N - 1;
   const CW = W / N;
   const PIN_R = 3.5;
   const BALL_R = 6.5;
-  const SLOT_TOP = 440;
-  const LAND_Y = 494;
+  const SLOT_TOP = 482;
+  const LAND_Y = 536;
   const HOP_FRAMES = 14;
   const canvas = $('board');
   const ctx = canvas.getContext('2d');
@@ -103,7 +103,8 @@
   canvas.style.aspectRatio = W + ' / ' + H;
   ctx.scale(dpr, dpr);
 
-  const pinY = (r) => 50 + r * 31;
+  const pinY = (r) => 94 + r * 31;
+  const START_Y = 66; // where a ball leaves the dispenser
   const pinX = (r, m) => W / 2 + (2 * m - r) * (CW / 2);
   const pins = [];
   for (let r = 0; r < ROWS; r++) for (let m = 0; m <= r; m++) pins.push({ x: pinX(r, m), y: pinY(r) });
@@ -132,6 +133,7 @@
   }
 
   let balls = [];
+  let lastDrop = 0;
   let pops = [];
   const flash = {};
 
@@ -144,14 +146,15 @@
     }
     const slot = pickSlot();
     const path = pathTo(slot);
-    const pts = [{ x: W / 2, y: 14 }];
+    const pts = [{ x: W / 2, y: START_Y }];
     let k = 0;
     for (let r = 0; r < ROWS; r++) {
       pts.push({ x: pinX(r, k) + (Math.random() - 0.5) * 2, y: pinY(r) - PIN_R - BALL_R });
       k += path[r];
     }
     pts.push({ x: (slot + 0.5) * CW, y: LAND_Y });
-    balls.push({ bet, slot, bonusDue: paid.bonusDue, pts, seg: 0, f: 0, x: W / 2, y: 14, done: false, fade: 1 });
+    balls.push({ bet, slot, bonusDue: paid.bonusDue, pts, seg: 0, f: 0, x: W / 2, y: START_Y, done: false, fade: 1 });
+    lastDrop = performance.now();
     startLoop();
   }
   $('dropBtn').addEventListener('click', dropBall);
@@ -200,6 +203,77 @@
     ctx.closePath();
   }
 
+  // Gold "SOMA DROP" marquee with twinkling bulbs, a gold funnel with a glow, and the next ball
+  // waiting in the funnel (it drops out on DROP and a new one rolls in).
+  function drawDispenser() {
+    const cx = W / 2;
+    const now = performance.now();
+    const glow = ctx.createRadialGradient(cx, 44, 6, cx, 44, 120);
+    glow.addColorStop(0, 'rgba(244, 210, 124, .30)');
+    glow.addColorStop(1, 'rgba(244, 210, 124, 0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, 170); // tall enough for the glow to fade out completely
+
+    const metal = ctx.createLinearGradient(cx - 60, 0, cx + 60, 0);
+    [['#7a5612', 0], ['#f6dc8d', 0.3], ['#b8862a', 0.55], ['#fbe7a8', 0.75], ['#8a6414', 1]].forEach(([c, a]) => metal.addColorStop(a, c));
+    // funnel
+    ctx.beginPath();
+    ctx.moveTo(cx - 48, 38); ctx.lineTo(cx + 48, 38); ctx.lineTo(cx + 13, 70); ctx.lineTo(cx - 13, 70); ctx.closePath();
+    ctx.fillStyle = metal; ctx.fill();
+    ctx.strokeStyle = '#5c430d'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - 36, 40); ctx.lineTo(cx + 36, 40); ctx.lineTo(cx + 8, 66); ctx.lineTo(cx - 8, 66); ctx.closePath();
+    ctx.fillStyle = '#140e04'; ctx.fill();
+
+    // the next ball, rolling back in shortly after a drop
+    const since = now - lastDrop;
+    if (since > 220) {
+      const settle = Math.min(1, (since - 220) / 250);
+      const y = 44 + 12 * settle;
+      const pulse = 0.6 + 0.4 * Math.sin(now / 280);
+      ctx.save();
+      ctx.shadowColor = `rgba(255, 236, 170, ${0.9 * pulse})`;
+      ctx.shadowBlur = 12;
+      const bg = ctx.createRadialGradient(cx - 2, y - 2, 1, cx, y, BALL_R);
+      bg.addColorStop(0, '#ffffff'); bg.addColorStop(0.4, '#f4d27c'); bg.addColorStop(1, '#8a6414');
+      ctx.fillStyle = bg;
+      ctx.globalAlpha = settle;
+      ctx.beginPath(); ctx.arc(cx, y, BALL_R, 0, 7); ctx.fill();
+      ctx.restore();
+    }
+
+    // marquee sign
+    const px = cx - 86;
+    const py = 6;
+    const pw = 172;
+    const ph = 30;
+    roundRect(px, py, pw, ph, 9);
+    ctx.fillStyle = metal; ctx.fill();
+    ctx.strokeStyle = '#5c430d'; ctx.lineWidth = 1.5; ctx.stroke();
+    roundRect(px + 4, py + 4, pw - 8, ph - 8, 6);
+    ctx.fillStyle = '#7a1426'; ctx.fill();
+    ctx.fillStyle = '#fbe7a8';
+    ctx.font = '900 13px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★  SOMA DROP  ★', cx, py + ph / 2 + 1);
+    // twinkling bulbs around the sign
+    const phase = Math.floor(now / 380) % 2;
+    const bulbs = [];
+    for (let i = 0; i <= 12; i++) { bulbs.push([px + (pw * i) / 12, py]); bulbs.push([px + (pw * i) / 12, py + ph]); }
+    bulbs.push([px, py + ph / 2], [px + pw, py + ph / 2]);
+    bulbs.forEach(([x, y], i) => {
+      const on = (i + phase) % 2 === 0;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x, y, 2.3, 0, 7);
+      ctx.fillStyle = on ? '#fff8e1' : '#b8862a';
+      ctx.shadowColor = on ? 'rgba(255, 236, 170, .95)' : 'transparent';
+      ctx.shadowBlur = on ? 6 : 0;
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
   function draw() {
     ctx.clearRect(0, 0, W, H);
     const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -207,6 +281,7 @@
     g.addColorStop(1, '#0b0c10');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
+    drawDispenser();
 
     // slots
     for (let i = 0; i < N; i++) {
@@ -302,6 +377,12 @@
     if (!looping) { looping = true; requestAnimationFrame(loop); }
   }
 
-  window.addEventListener('soma:view', (e) => { if (e.detail === 'drop') draw(); });
+  let idleTimer = null;
+  function setIdle(on) {
+    clearInterval(idleTimer);
+    idleTimer = on ? setInterval(() => { if (!looping && document.visibilityState === 'visible') draw(); }, 120) : null;
+  }
+  window.addEventListener('soma:view', (e) => { setIdle(e.detail === 'drop'); if (e.detail === 'drop') draw(); });
+  setIdle(game.view === 'drop');
   draw();
 })();
