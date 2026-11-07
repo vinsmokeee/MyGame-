@@ -154,8 +154,8 @@ async function start() {
     // Give the ID check a moment first so the welcome usually shows the final ID.
     const idReady = claimId();
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
+    game.accountReady();
     if (mode === 'created') game.showWelcome();
-    else if (!game.prizeNoteSeen) game.showPrizeNote();
     idReady.finally(saveNow);
   }
 

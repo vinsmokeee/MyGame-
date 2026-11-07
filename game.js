@@ -505,17 +505,19 @@
 
   // ---------- first visit: name + gender, then welcome with their ID ----------
   // Prize note: what the three big slices pay at each bet (same formula the wheel uses).
-  // Prize note for ALL games. Each game adds itself to window.SOMA_PRIZES with a title and the
-  // prizes it pays for a bet; the note lists them per bet ("Nu 20 bet = Prize Nu 40, Nu 400, ...").
-  const PRIZE_NOTE_VERSION = 2; // raise this when the note changes, so every player sees it once more
+  // Prize notes. Each game adds itself to window.SOMA_PRIZES with an id (its view), a title and the
+  // prizes it pays for a bet. The first time a player opens a game, that game's note pops up once;
+  // ☰ → Note lists every game. Lines read "Nu 20 bet = Prize Nu 40, Nu 400, ...".
   window.SOMA_PRIZES = window.SOMA_PRIZES || [];
   window.SOMA_PRIZES.unshift({
+    id: 'spin',
     title: '🎡 Lucky Spin',
     prizes: (bet) => SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full).map((seg) => bigPrize(seg, bet)),
   });
-  function fillPrizeLines(box) {
+  function fillPrizeLines(box, onlyId) {
     box.replaceChildren();
     for (const g of window.SOMA_PRIZES) {
+      if (onlyId && g.id !== onlyId) continue;
       const h = document.createElement('h4');
       h.textContent = g.title;
       const list = document.createElement('ul');
@@ -529,17 +531,26 @@
         li.append(b, ` = Prize ${g.prizes(bet).map((n) => fmtNu(n).replace(' ', '\u00a0')).join(', ')}`);
         list.append(li);
       }
-      box.append(h, list);
+      if (onlyId) box.append(list); // the pop-up title already names the game
+      else box.append(h, list);
     }
   }
-  function showPrizeNote() {
-    fillPrizeLines($('prizeNoteGames'));
-    const dlg = $('prizeNoteDialog');
-    state.prizeNoteSeen = PRIZE_NOTE_VERSION; // shown once per player (and again when the note changes)
+  // Which games' notes this player has seen, e.g. { spin: true, drop: true }.
+  const seenNotes = () => (state.prizeNoteSeen && typeof state.prizeNoteSeen === 'object' ? state.prizeNoteSeen : {});
+  let accountReady = !(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase); // online: wait until logged in
+  // Shows the note for the game on screen, once per player per game.
+  function maybeShowGameNote() {
+    const id = currentView;
+    const g = window.SOMA_PRIZES.find((x) => x.id === id);
+    if (!accountReady || !g || seenNotes()[id] || document.querySelector('dialog[open]')) return;
+    fillPrizeLines($('prizeNoteGames'), id);
+    $('prizeNoteTitle').textContent = `*Note: ${g.title.replace(/^\S+\s/, '')}`;
+    state.prizeNoteSeen = { ...seenNotes(), [id]: true };
     save();
-    dlg.showModal();
+    $('prizeNoteDialog').showModal();
   }
-  $('welcomeDialog').addEventListener('close', showPrizeNote);
+  // After the welcome pop-up, show the note if the player is already in a game.
+  $('welcomeDialog').addEventListener('close', () => setTimeout(maybeShowGameNote, 0));
 
   function startSignup() {
     const dlg = $('signupDialog');
@@ -623,6 +634,7 @@
     document.body.dataset.view = name;
     if (name === 'spin') drawWheel();
     window.dispatchEvent(new CustomEvent('soma:view', { detail: name }));
+    setTimeout(maybeShowGameNote, 0); // after every game has loaded
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', showView);
@@ -630,7 +642,8 @@
   window.LuckySpin = {
     // ----- accounts (used by online.js) -----
     get localOwner() { return state.uid || null; },
-    get prizeNoteSeen() { return Number(state.prizeNoteSeen) >= PRIZE_NOTE_VERSION; },
+    // Called by online.js once the player is logged in (notes wait until then).
+    accountReady() { accountReady = true; setTimeout(maybeShowGameNote, 0); },
     exportState() {
       const out = {};
       for (const k of ACCOUNT_FIELDS) if (state[k] !== undefined) out[k] = state[k];
@@ -658,7 +671,7 @@
     },
     clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
     showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
-    showPrizeNote,
+    maybeShowGameNote,
     // ----- shared wallet for the other SOMA games -----
     get view() { return currentView; },
     // Takes a bet from the balance. Returns { ok, bonusDue } (bonusDue: this play earns the free bonus).
@@ -728,6 +741,5 @@
   // With online accounts, online.js shows the log-in / create-account pop-up instead.
   if (!(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase)) {
     if (!state.gender) startSignup();
-    else if (!(Number(state.prizeNoteSeen) >= PRIZE_NOTE_VERSION)) setTimeout(showPrizeNote, 0); // after every game has loaded
   }
 })();

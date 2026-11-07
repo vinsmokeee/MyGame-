@@ -35,6 +35,7 @@
   // Prizes listed in the shared Note pop-up (the winning slots, smallest to largest).
   window.SOMA_PRIZES = window.SOMA_PRIZES || [];
   window.SOMA_PRIZES.push({
+    id: 'drop',
     title: '🎯 SOMA Drop',
     prizes: (b) => [...new Set(SLOTS.filter((s) => s.m > 1).map((s) => s.m))].sort((x, y) => x - y).map((m) => Math.floor(b * m)),
   });
