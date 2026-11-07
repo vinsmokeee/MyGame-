@@ -13,26 +13,30 @@
 
   // p = chance per spin (all slices add up to 1). mult = payout as a multiple of the bet.
   // full = big prize paid in full at a Nu 100 bet; smaller bets win a smaller share (bigPrize).
-  // Tuned with simulations: LOSE 54%, a win about 1 spin in 4, and over time players get
-  // back about 88% of Nu 50/100 bets (about 98% of Nu 20 bets, with the spin bonus).
-  //   x5 1 in 30 · Nu 1,000 1 in 200 · Nu 10,000 1 in 2,500 · Jackpot Nu 50,000 1 in 20,000
+  // Tuned with simulations so players get frequent small results and still slowly lose:
+  //   never more than MAX_LOSE_RUN LOSE in a row (about 41% of spins end up LOSE),
+  //   x0.5 about 1 in 3, x2 1 in 8, x3 1 in 20, x5 1 in 50,
+  //   Nu 1,000 1 in 200, Nu 10,000 1 in 2,500, Jackpot Nu 50,000 1 in 20,000.
+  //   Players get back about 88-90% of Nu 50/100 bets (about 99% of Nu 20 bets, with the spin bonus).
+  const MAX_LOSE_RUN = 2;
   const SEGMENTS = [
-    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
-    { label: 'LOSE',    mult: 0,   p: 0.27,    color: '#334155' },
-    { label: 'x2',      mult: 2,   p: 0.0275,  color: '#f97316' },
-    { label: 'x0.5',    mult: 0.5, p: 0.04811, color: '#64748b' },
-    { label: 'x5',      mult: 5,   p: 1 / 60,  color: '#ec4899' },
-    { label: 'x1',      mult: 1,   p: 0.05,    color: '#22c55e' },
+    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
+    { label: 'LOSE',    mult: 0,   p: 0.23894, color: '#334155' },
+    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#64748b' },
+    { label: 'x3',      mult: 3,   p: 0.0225,  color: '#a855f7' },
+    { label: 'x5',      mult: 5,   p: 1 / 120, color: '#ec4899' },
+    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#0ea5e9' },
     { label: 'NU 1K',   full: 1000,  p: 1 / 200,   color: '#166534', big: true },
-    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
-    { label: 'x3',      mult: 3,   p: 0.02,    color: '#a855f7' },
+    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
+    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#64748b' },
     { label: 'NU 10K',  full: 10000, p: 1 / 2500,  color: '#7f1d1d', mega: true },
-    { label: 'x0.5',    mult: 0.5, p: 0.04811, color: '#64748b' },
-    { label: 'LOSE',    mult: 0,   p: 0.27,    color: '#475569' },
-    { label: 'x2',      mult: 2,   p: 0.0275,  color: '#f97316' },
-    { label: 'x5',      mult: 5,   p: 1 / 60,  color: '#ec4899' },
-    { label: 'x1',      mult: 1,   p: 0.05,    color: '#22c55e' },
-    { label: 'x1.5',    mult: 1.5, p: 0.05,    color: '#0ea5e9' },
+    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
+    { label: 'LOSE',    mult: 0,   p: 0.23894, color: '#475569' },
+    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#0ea5e9' },
+    { label: 'x3',      mult: 3,   p: 0.0225,  color: '#a855f7' },
+    { label: 'x1',      mult: 1,   p: 0.04,    color: '#22c55e' },
+    { label: 'x5',      mult: 5,   p: 1 / 120, color: '#ec4899' },
+    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
     { label: 'JACKPOT', full: 50000, p: 1 / 20000, color: '#eab308', jackpot: true },
   ];
   for (const x of SEGMENTS) x.weight = x.p;
@@ -146,13 +150,18 @@
   }
 
   // ---------- game logic ----------
+  const isLose = (seg) => !seg.full && seg.mult === 0;
+  // After MAX_LOSE_RUN LOSE results in a row, the next spin is never LOSE.
   function pickSegment() {
-    let roll = Math.random() * TOTAL_WEIGHT;
+    const noLose = (state.loseRun || 0) >= MAX_LOSE_RUN;
+    const total = SEGMENTS.reduce((s, x) => s + (noLose && isLose(x) ? 0 : x.weight), 0);
+    let roll = Math.random() * total;
     for (let i = 0; i < N; i++) {
+      if (noLose && isLose(SEGMENTS[i])) continue;
       roll -= SEGMENTS[i].weight;
       if (roll < 0) return i;
     }
-    return 1; // a LOSE segment
+    return SEGMENTS.findIndex((x) => x.label === 'x0.5');
   }
 
   function segmentAt(rot) {
@@ -210,6 +219,7 @@
 
   function finish(index, bet) {
     const seg = SEGMENTS[index];
+    state.loseRun = isLose(seg) ? (state.loseRun || 0) + 1 : 0;
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
