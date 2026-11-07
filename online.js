@@ -267,20 +267,38 @@ async function start() {
   // ---------- big-win announcements ----------
   // Wins of ×2 or more (at least Nu 100) are posted to wins/; every other player online sees a short
   // message such as "Tashi (ID 627182) hit ×3 in SOMA Drop and won Nu 300" that fades after ~3.5 s.
+  // Players who were away see the wins they missed (up to 8 from the last 24 hours) when they come
+  // back, each marked with how long ago it happened. Each win is shown to a phone only once.
+  const MISSED_MAX = 8;
+  const MISSED_HOURS = 24;
+  const SEEN_KEY = 'soma.winsSeenAt';
   const feedQueue = [];
   let feedBusy = false;
+  function ago(ms) {
+    const min = Math.floor((Date.now() - ms) / 60000);
+    if (min < 2) return '';
+    if (min < 60) return ` · ${min} min ago`;
+    const h = Math.floor(min / 60);
+    return ` · ${h} hour${h === 1 ? '' : 's'} ago`;
+  }
   function feedText(w) {
     const who = `${w.name || 'A player'}${w.playerId ? ` (ID ${w.playerId})` : ''}`;
     const nu = `Nu ${Number(w.amount).toLocaleString('en-US')}`;
-    if (w.label === 'JACKPOT') return `🏆 ${who} won the JACKPOT in ${w.game}: ${nu}!`;
-    if (w.label) return `🎉 ${who} hit ${w.label} in ${w.game} and won ${nu}`;
-    return `🎉 ${who} won ${nu} in ${w.game}`;
+    const when = w.at ? ago(w.at) : '';
+    if (w.label === 'JACKPOT') return `🏆 ${who} won the JACKPOT in ${w.game}: ${nu}!${when}`;
+    if (w.label) return `🎉 ${who} hit ${w.label} in ${w.game} and won ${nu}${when}`;
+    return `🎉 ${who} won ${nu} in ${w.game}${when}`;
+  }
+  function markSeen(ms) {
+    try { if (ms > Number(localStorage.getItem(SEEN_KEY) || 0)) localStorage.setItem(SEEN_KEY, String(ms)); } catch (_) { /* ignore */ }
   }
   function showNextWin() {
     if (feedBusy || !feedQueue.length) return;
     feedBusy = true;
     const el = $('winToast');
-    el.textContent = feedText(feedQueue.shift());
+    const w = feedQueue.shift();
+    el.textContent = feedText(w);
+    if (w.at) markSeen(w.at);
     el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
@@ -296,15 +314,22 @@ async function start() {
     },
   };
   function listenForWins() {
-    const since = fb.Timestamp.fromDate(new Date());
+    // Start from the last win this phone has seen (at most MISSED_HOURS back), so wins that happened
+    // while the player was away are shown too.
+    let seen = 0;
+    try { seen = Number(localStorage.getItem(SEEN_KEY) || 0); } catch (_) { /* ignore */ }
+    const floor = Date.now() - MISSED_HOURS * 3600 * 1000;
+    const since = fb.Timestamp.fromDate(new Date(Math.max(seen, floor)));
     fb.onSnapshot(
-      fb.query(fb.collection(db, 'wins'), fb.where('createdAt', '>', since), fb.orderBy('createdAt'), fb.limitToLast(20)),
+      fb.query(fb.collection(db, 'wins'), fb.where('createdAt', '>', since), fb.orderBy('createdAt'), fb.limitToLast(MISSED_MAX)),
       (snap) => {
         for (const ch of snap.docChanges()) {
-          const w = ch.doc.data();
-          if (ch.type !== 'added' || w.uid === uid) continue; // players see their own wins on the board
-          feedQueue.push(w);
-          if (feedQueue.length > 3) feedQueue.shift(); // keep it to the latest few
+          const d = ch.doc.data({ serverTimestamps: 'estimate' });
+          const at = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().getTime() : Date.now();
+          if (ch.type !== 'added') continue;
+          if (d.uid === uid) { markSeen(at); continue; } // players see their own wins on the board
+          feedQueue.push({ ...d, at });
+          if (feedQueue.length > MISSED_MAX) feedQueue.shift(); // keep it to the latest few
         }
         showNextWin();
       },
