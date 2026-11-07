@@ -1,5 +1,5 @@
 // SOMA Drop: a Plinko-style game in the SOMA lobby. It uses the same account and the same
-// Nu balance as Lucky Spin (window.LuckySpin is the shared wallet), so recharges and Nu added
+// Nu balance as SOMA Spin (window.LuckySpin is the shared wallet), so recharges and Nu added
 // by the team work in every game.
 (() => {
   'use strict';
@@ -28,7 +28,7 @@
   const BETS = [20, 50, 100, 500];
   const MAX_BALLS = 6; // balls in the air at once
 
-  // Same casino colours as the Lucky Spin wheel.
+  // Same casino colours as the SOMA Spin wheel.
   const slotColor = (m) => (m >= 100 ? ['#8a6414', '#f4d27c'] : m >= 5 ? ['#7a1426', '#c0263f']
     : m >= 3 ? ['#5e0f1c', '#9e1d33'] : m >= 2 ? ['#06301f', '#0f6b44'] : ['#15171e', '#2a2d36']);
   const slotText = (m) => (m >= 100 ? '#2a1d00' : m <= 0.5 ? '#a3a7b0' : '#fbf3df');

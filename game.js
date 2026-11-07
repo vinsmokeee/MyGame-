@@ -511,7 +511,7 @@
   window.SOMA_PRIZES = window.SOMA_PRIZES || [];
   window.SOMA_PRIZES.unshift({
     id: 'spin',
-    title: '🎡 Lucky Spin',
+    title: '🎡 SOMA Spin',
     prizes: (bet) => SEGMENTS.filter((x) => x.full).sort((a, b) => a.full - b.full).map((seg) => bigPrize(seg, bet)),
   });
   function fillPrizeLines(box, onlyId) {

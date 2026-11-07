@@ -4,7 +4,7 @@ One link, one account, one Nu balance, several games. Open `index.html` in a mod
 https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 
 - **Lobby** (`index.html`): log in or create an account, see your balance and ID, then pick a game.
-  `#spin` opens Lucky Spin, `#drop` opens SOMA Drop. The ☰ menu (Contact us, Note, Recharge, Log out) and the
+  `#spin` opens SOMA Spin, `#drop` opens SOMA Drop. The ☰ menu (Contact us, Note, Recharge, Log out) and the
   free **Nu 20 every 10 plays** bonus are shared by all games.
 - **One wallet:** recharges and Nu added from the owner page work in every game (`window.LuckySpin.spend/settle`).
 - **Adding a game:** add a `view-<name>` section and a lobby card in `index.html`, and a script that uses the
@@ -16,7 +16,7 @@ JACKPOT: ×0.5 (~85%), ×2 (~11%), ×3 (~3%), ×5 (~0.6%), JACKPOT ×100 (1 in 2
 `SLOTS` (`p`) in `drop.js`, and the ball's path is drawn to that slot.
 Players get back about 82% of their bets over time (plus the shared play bonus).
 
-## Lucky Spin
+## SOMA Spin
 - Players start with Nu 200, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).
 - Never more than 2 LOSE in a row (about 41% of spins are LOSE). ×0.5 about 1 in 3, ×2 1 in 8, ×3 1 in 20,
   ×5 1 in 50. Three big prizes pay their listed amount at a Nu 100 bet (smaller share at lower bets, 5× at Nu 500): Nu 1,000 (~1 in 180),
