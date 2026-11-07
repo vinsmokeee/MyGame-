@@ -148,11 +148,15 @@ async function start() {
     entered = true;
     if (accountDlg.open) accountDlg.close();
     document.querySelector('[data-action="logout"]').hidden = false;
-    await claimId();
-    await saveNow();
     startListeners();
+    // Show the pop-ups without waiting for the network: on a weak mobile signal the saves below can take
+    // a long time (or wait until the signal returns), and players were left with no pop-up at all.
+    // Give the ID check a moment first so the welcome usually shows the final ID.
+    const idReady = claimId();
+    await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     if (mode === 'created') game.showWelcome();
     else if (!game.prizeNoteSeen) game.showPrizeNote();
+    idReady.finally(saveNow);
   }
 
   // ---------- saving progress to the account ----------
