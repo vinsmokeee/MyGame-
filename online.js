@@ -236,8 +236,57 @@ async function start() {
     send: (text) => sendMessage({ text: text.slice(0, MAX_TEXT) }, text),
   };
 
+  // ---------- big-win announcements ----------
+  // Wins of ×2 or more (at least Nu 100) are posted to wins/; every other player online sees a short
+  // message such as "Tashi (ID 627182) hit ×3 in SOMA Drop and won Nu 300" that fades after ~3.5 s.
+  const feedQueue = [];
+  let feedBusy = false;
+  function feedText(w) {
+    const who = `${w.name || 'A player'}${w.playerId ? ` (ID ${w.playerId})` : ''}`;
+    const nu = `Nu ${Number(w.amount).toLocaleString('en-US')}`;
+    if (w.label === 'JACKPOT') return `🏆 ${who} won the JACKPOT in ${w.game}: ${nu}!`;
+    if (w.label) return `🎉 ${who} hit ${w.label} in ${w.game} and won ${nu}`;
+    return `🎉 ${who} won ${nu} in ${w.game}`;
+  }
+  function showNextWin() {
+    if (feedBusy || !feedQueue.length) return;
+    feedBusy = true;
+    const el = $('winToast');
+    el.textContent = feedText(feedQueue.shift());
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => { el.classList.remove('show'); feedBusy = false; setTimeout(showNextWin, 400); }, 3600);
+  }
+  window.LuckyFeed = {
+    post(win) {
+      if (!uid) return;
+      fb.addDoc(fb.collection(db, 'wins'), {
+        uid, name: game.name, playerId: game.playerId, game: win.game, label: win.label || '', amount: win.amount,
+        createdAt: fb.serverTimestamp(),
+      }).catch(() => {});
+    },
+  };
+  function listenForWins() {
+    const since = fb.Timestamp.fromDate(new Date());
+    fb.onSnapshot(
+      fb.query(fb.collection(db, 'wins'), fb.where('createdAt', '>', since), fb.orderBy('createdAt'), fb.limitToLast(20)),
+      (snap) => {
+        for (const ch of snap.docChanges()) {
+          const w = ch.doc.data();
+          if (ch.type !== 'added' || w.uid === uid) continue; // players see their own wins on the board
+          feedQueue.push(w);
+          if (feedQueue.length > 3) feedQueue.shift(); // keep it to the latest few
+        }
+        showNextWin();
+      },
+      () => {},
+    );
+  }
+
   function startListeners() {
     ready();
+    try { listenForWins(); } catch (_) { /* announcements are optional; chat and recharges keep working */ }
     setNote('');
     input.disabled = false;
     photo.disabled = false;

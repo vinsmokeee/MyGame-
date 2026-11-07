@@ -278,6 +278,7 @@
     state.nu += payout;
     addHistory(seg.jackpot ? 'Jackpot' : seg.full ? 'Big win' : nice(seg.label), net);
     spinning = false;
+    announceWin('SOMA Spin', seg.jackpot ? 'JACKPOT' : seg.full ? '' : nice(seg.label), payout, seg.full || seg.mult >= 2);
 
     let text;
     let kind = '';
@@ -623,11 +624,23 @@
     drawWheel();
     render();
   });
-  $('sound').addEventListener('click', (e) => {
-    soundOn = !soundOn;
-    e.currentTarget.textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
-    e.currentTarget.setAttribute('aria-pressed', String(soundOn));
-  });
+  function setSound(on) {
+    soundOn = on;
+    $('sound').textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
+    $('sound').setAttribute('aria-pressed', String(soundOn));
+    const d = $('dropSound');
+    if (d) { d.textContent = soundOn ? '🔊' : '🔇'; d.setAttribute('aria-pressed', String(soundOn)); }
+  }
+  $('sound').addEventListener('click', () => setSound(!soundOn));
+  if ($('dropSound')) $('dropSound').addEventListener('click', () => setSound(!soundOn));
+
+  // Big wins are shared with other players online (online.js shows them as a short message).
+  // Only wins of ×2 or more that pay at least ANNOUNCE_MIN, to keep the messages meaningful.
+  const ANNOUNCE_MIN = 100;
+  function announceWin(game, label, payout, isWin) {
+    if (!isWin || payout < ANNOUNCE_MIN || !window.LuckyFeed) return;
+    window.LuckyFeed.post({ game, label, amount: Math.floor(payout) });
+  }
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && currentView === 'spin' && !document.querySelector('dialog[open]')
         && !['SELECT', 'BUTTON', 'INPUT', 'TEXTAREA', 'SUMMARY'].includes(e.target.tagName)) {
@@ -638,7 +651,7 @@
 
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   // Fields saved to the player's online account (so they can log in on any phone).
-  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'history', 'grants', 'prizeNoteSeen'];
+  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'history', 'grants', 'prizeNoteSeen'];
   function refreshAll() {
     save();
     buildLegend();
@@ -699,9 +712,10 @@
     // ----- shared wallet for the other SOMA games -----
     get view() { return currentView; },
     // Takes a bet from the balance. Returns { ok, bonusDue } (bonusDue: this play earns the free bonus).
-    spend(amount) {
+    spend(amount, game) {
       if (!(amount > 0) || state.nu < amount) return { ok: false };
       state.nu -= amount;
+      if (game === 'drop') state.drops = (state.drops || 0) + 1;
       const bonusDue = countPlay();
       save();
       render();
@@ -725,6 +739,13 @@
       else chime([330, 247]);
     },
     get bonusNu() { return BONUS_NU; },
+    announceWin,
+    // Sound effects for other games (respect the shared Sound on/off).
+    sound: {
+      start() { ensureAudio(); },
+      beep(freq, start, dur, vol, type) { if (soundOn) beep(freq, start, dur, vol, type); },
+      chime(notes) { if (soundOn) chime(notes); },
+    },
     get bonusEvery() { return BONUS_EVERY; },
     // Short alert sound for the owner's notifications (works once sound has been allowed by a tap).
     alertSound() { if (audio) { ensureAudio(); chime([880, 1175, 1568]); } },

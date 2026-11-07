@@ -7,24 +7,22 @@
   if (!game) return;
 
   // ---------- settings ----------
-  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet, p = chance per drop.
-  // Layout: JACKPOT ×5 ×3 ×2 ×2 ×0.5 ×0.5 ×0.5 ×2 ×2 ×3 ×5 JACKPOT. Each slot's chance is set directly
-  // (if the pins decided, the four ×2 slots would catch ~35% of balls and players would gain ~118%).
-  // The ball's bounce path is then drawn to that slot. Totals per drop: ×0.5 85%, ×2 11% (1 in 9),
-  // ×3 3.2%, ×5 0.6%, JACKPOT 1 in 2,048. Players get back about 82% of their bets over time
-  // (plus the shared free bonus every 10 plays).
-  const PJP = 1 / 4096;          // each JACKPOT slot (two of them: 1 in 2,048 in total)
-  const P5 = 12 / 4096;          // each ×5 slot
-  const P3 = 66 / 4096;          // each ×3 slot
-  const P2 = 440 / 4096 / 4;     // each of the four ×2 slots
-  const P05 = 3498 / 4096 / 3;   // each of the three ×0.5 slots
+  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet.
+  // Layout: JACKPOT ×5 ×3 ×2 ×2 ×0.3 ×0.3 ×0.3 ×2 ×2 ×3 ×5 JACKPOT.
+  // p = chance on a normal drop; f = chance on a "guaranteed" drop. After MAX_SMALL_RUN ×0.3 results in a
+  // row, the next ball always lands on ×2 (90%) or ×3 (10%). Each slot's chance is set directly and the
+  // ball's bounce path is drawn to that slot. Tuned with simulations: ×2 about 1 in 4, ×3 1 in 31,
+  // ×5 1 in 170, JACKPOT about 1 in 2,500; players get back about 86% (Nu 100) to 95% (Nu 20, with
+  // the shared free bonus) of their bets over time.
+  const MAX_SMALL_RUN = 3;
   const SLOTS = [
-    { t: 'JACKPOT', m: 100, p: PJP }, { t: '×5', m: 5, p: P5 }, { t: '×3', m: 3, p: P3 },
-    { t: '×2', m: 2, p: P2 }, { t: '×2', m: 2, p: P2 },
-    { t: '×0.5', m: 0.5, p: P05 }, { t: '×0.5', m: 0.5, p: P05 }, { t: '×0.5', m: 0.5, p: P05 },
-    { t: '×2', m: 2, p: P2 }, { t: '×2', m: 2, p: P2 },
-    { t: '×3', m: 3, p: P3 }, { t: '×5', m: 5, p: P5 }, { t: 'JACKPOT', m: 100, p: PJP },
+    { t: 'JACKPOT', m: 100, p: 0.0005 / 2, f: 0 }, { t: '×5', m: 5, p: 0.0075 / 2, f: 0 }, { t: '×3', m: 3, p: 0.012 / 2, f: 0.1 / 2 },
+    { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 }, { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 },
+    { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 }, { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 }, { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 },
+    { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 }, { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 },
+    { t: '×3', m: 3, p: 0.012 / 2, f: 0.1 / 2 }, { t: '×5', m: 5, p: 0.0075 / 2, f: 0 }, { t: 'JACKPOT', m: 100, p: 0.0005 / 2, f: 0 },
   ];
+  let smallRun = 0; // ×0.3 results in a row
   const BETS = [20, 50, 100, 500];
   const MAX_BALLS = 6; // balls in the air at once
 
@@ -118,10 +116,13 @@
   // Pick the slot by its chance, then a random bounce path that ends there
   // (slot k = k bounces to the right out of 12 rows, in a random order).
   function pickSlot() {
-    const total = SLOTS.reduce((s, x) => s + x.p, 0);
+    const key = smallRun >= MAX_SMALL_RUN ? 'f' : 'p';
+    const total = SLOTS.reduce((s, x) => s + x[key], 0);
     let r = rand() * total;
-    for (let i = 0; i < SLOTS.length; i++) { r -= SLOTS[i].p; if (r < 0) return i; }
-    return 6;
+    let slot = 3;
+    for (let i = 0; i < SLOTS.length; i++) { r -= SLOTS[i][key]; if (r < 0) { slot = i; break; } }
+    smallRun = SLOTS[slot].m < 1 ? smallRun + 1 : 0;
+    return slot;
   }
   function pathTo(slot) {
     const path = Array.from({ length: ROWS }, (_, i) => (i < slot ? 1 : 0));
@@ -139,7 +140,7 @@
 
   function dropBall() {
     if (balls.filter((b) => !b.done).length >= MAX_BALLS) return;
-    const paid = game.spend(bet);
+    const paid = game.spend(bet, 'drop');
     if (!paid.ok) {
       say(game.nu < BETS[0] ? 'You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.' : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller one.`, 'lose');
       return;
@@ -155,6 +156,11 @@
     pts.push({ x: (slot + 0.5) * CW, y: LAND_Y });
     balls.push({ bet, slot, bonusDue: paid.bonusDue, pts, seg: 0, f: 0, x: W / 2, y: START_Y, done: false, fade: 1 });
     lastDrop = performance.now();
+    // release: a soft "clunk" from the dispenser and a short rising whoosh
+    game.sound.start();
+    game.sound.beep(196, 0, 0.09, 0.12, 'square');
+    game.sound.beep(392, 0.02, 0.14, 0.05, 'triangle');
+    game.sound.beep(587, 0.08, 0.12, 0.04, 'triangle');
     startLoop();
   }
   $('dropBtn').addEventListener('click', dropBall);
@@ -170,6 +176,7 @@
     b.x = a.x + (c.x - a.x) * t;
     b.y = a.y + (c.y - a.y) * (last ? t * t : t) - (last ? 0 : 7 * 4 * t * (1 - t));
     if (t >= 1) {
+      if (b.seg > 0 && b.seg < b.pts.length - 2) game.sound.beep(1100 + Math.random() * 500, 0, 0.03, 0.03, 'triangle');
       b.seg += 1;
       b.f = 0;
       if (b.seg >= b.pts.length - 1) land(b);
@@ -184,12 +191,14 @@
     const slot = SLOTS[b.slot];
     const payout = Math.floor(b.bet * slot.m);
     game.settle({ payout, net: payout - b.bet, label: `Drop ${slot.t}`, bonusDue: b.bonusDue });
+    game.sound.beep(150, 0, 0.12, 0.13, 'sine'); // the ball lands in the slot
+    game.announceWin('SOMA Drop', slot.t, payout, slot.m >= 2);
     flash[b.slot] = 1;
     pops.push({ x: Math.max(30, Math.min(W - 30, (b.slot + 0.5) * CW)), y: LAND_Y - 22, t: 1, txt: '+' + fmtNu(payout), c: slotColor(slot.m)[1] });
     let text;
     if (slot.m >= 100) { text = `🎉 JACKPOT! You won ${fmtNu(payout)}!`; game.celebrate('jackpot'); say(text, 'jackpot'); }
     else if (payout > b.bet) { text = `${slot.t}! You won ${fmtNu(payout)}.`; game.celebrate(slot.m >= 5 ? 'big' : 'win'); say(text, 'win'); }
-    else { text = `${slot.t}: ${fmtNu(payout)} back.`; say(text, 'lose'); }
+    else { text = `${slot.t}: ${fmtNu(payout)} back.`; say(text, 'lose'); game.sound.chime([392, 330]); }
     if (b.bonusDue) say(`${text} +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`, slot.m >= 100 ? 'jackpot' : 'win');
   }
 

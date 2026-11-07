@@ -62,9 +62,14 @@ a.game-card:hover { transform: translateY(-2px); border-color: #f4d27c; }
 }
 
 /* ---------- SOMA Drop ---------- */
-.board { width: min(100%, 440px); background: #0b0c10; border: 2px solid #b8862a; border-radius: 16px; padding: 6px; box-shadow: 0 14px 34px rgba(0, 0, 0, .6); }
+.board { width: min(100%, 440px, max(240px, calc((100vh - 360px) * 0.62))); background: #0b0c10; border: 2px solid #b8862a; border-radius: 16px; padding: 6px; box-shadow: 0 14px 34px rgba(0, 0, 0, .6); }
 #board { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; cursor: pointer; }
-.drop-controls { display: flex; gap: 8px; width: min(100%, 440px); }
+.drop-controls { display: flex; gap: 6px; width: min(100%, 440px); align-items: stretch; }
+.drop-sound { width: 44px; height: auto; font-size: 1.1rem; }
+.drop-controls .bets button { white-space: nowrap; font-size: .85rem; padding: 10px 0; }
+.drop-controls .drop-btn { padding: 10px 14px; }
+.drop-controls .drop-sound { width: 40px; flex: none; }
+body:not([data-view="home"]) .profile { display: none; }
 .bets { display: flex; gap: 6px; flex: 1; }
 .bets button {
   flex: 1; padding: 10px 0; border-radius: 10px; border: 1px solid var(--border);
@@ -279,6 +284,16 @@ a.drawer-item { display: block; text-decoration: none; }
 .pf-stats div { background: var(--bg); border-radius: 10px; padding: 8px 10px; }
 .pf-stats dt { color: var(--muted); font-size: .75rem; }
 .pf-stats dd { margin: 2px 0 0; font-weight: 700; }
+
+/* ---------- big-win announcements ---------- */
+.win-toast {
+  position: fixed; left: 50%; bottom: 18px; z-index: 55; transform: translate(-50%, 20px);
+  width: max-content; max-width: calc(100vw - 24px); padding: 10px 16px; border-radius: 999px;
+  background: rgba(20, 16, 6, .92); color: #fbe7a8; border: 1px solid #d4a63a; font-size: .9rem; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5); text-align: center; opacity: 0; pointer-events: none;
+  transition: opacity .45s, transform .45s;
+}
+.win-toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- chat ---------- */
 .msg-delete { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; opacity: .9; }

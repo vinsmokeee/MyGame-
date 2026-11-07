@@ -132,7 +132,9 @@ async function start() {
       li.querySelector('.idtag').textContent = `ID ${p.playerId || '?'}`;
       li.querySelector('.nm').textContent = p.name || 'Unnamed';
       li.querySelector('.meta').textContent = fmtTime(p.updatedAt);
-      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${p.spins || 0} spins`].filter(Boolean).join(' · ');
+      // "spins" in the account counts every play; drops are counted separately.
+      const drops = p.drops || 0;
+      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${Math.max(0, (p.spins || 0) - drops)} spins`, `${drops} drops`].filter(Boolean).join(' · ');
       ul.append(li);
     }
   }

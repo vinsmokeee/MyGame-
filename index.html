@@ -105,6 +105,7 @@
           <button type="button" data-bet="500">Nu 500</button>
         </div>
         <button id="dropBtn" class="primary drop-btn" type="button">DROP</button>
+        <button id="dropSound" class="icon-btn drop-sound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
       </div>
       <p class="hint center">Press DROP or tap the board. Where the ball lands decides your prize.</p>
     </section>
@@ -114,7 +115,7 @@
         <thead id="payHead"></thead>
         <tbody id="payBody"></tbody>
       </table>
-      <p class="hint">The two edge slots are the JACKPOT: 100× your bet. Most balls land in the three middle slots (×0.5).</p>
+      <p class="hint">The two edge slots are the JACKPOT: 100× your bet. Never more than 3 balls in a row land in the middle (×0.3): the next one always lands on ×2 or ×3.</p>
     </section>
   </section>
 </main>
@@ -296,6 +297,7 @@
   </form>
 </section>
 <div id="lightbox" class="lightbox" hidden><img alt="Photo"></div>
+<div id="winToast" class="win-toast" role="status" aria-live="polite"></div>
 
 <div id="ownerToast" class="owner-toast" role="alert" hidden>
   <div class="owner-toast-body">
