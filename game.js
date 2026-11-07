@@ -13,31 +13,29 @@
 
   // p = chance per spin (all slices add up to 1). mult = payout as a multiple of the bet.
   // full = big prize paid in full at a Nu 100 bet; smaller bets win a smaller share (bigPrize).
-  // Tuned with simulations so players get frequent small results and still slowly lose:
-  //   never more than MAX_LOSE_RUN LOSE in a row (about 41% of spins end up LOSE),
-  //   x0.5 about 1 in 3, x2 1 in 8, x3 1 in 20, x5 1 in 50,
-  //   Nu 1,000 1 in 200, Nu 10,000 1 in 2,500, Jackpot Nu 50,000 1 in 20,000.
-  //   With the Nu 20 spin bonus, players get back about 84% of Nu 20 bets, 82% of Nu 50 and 87% of Nu 100.
-  const MAX_LOSE_RUN = 2;
+  // Every spin is independent and purely random (no patterns or streak rules). Overall chances:
+  //   LOSE 41.4%, ×0.5 33.7%, ×1 4.5%, ×2 12.9% (1 in 8), ×3 5.1% (1 in 20), ×5 1.9% (1 in 54),
+  //   Nu 1,000 1 in 178, Nu 10,000 1 in 2,217, Jackpot 1 in 17,241.
+  //   With the shared play bonus, players get back about 84–87% of their bets over time.
   const SEGMENTS = [
-    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
-    { label: 'LOSE',    mult: 0,   p: 0.23894, color: '#334155' },
-    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#64748b' },
-    { label: 'x3',      mult: 3,   p: 0.0225,  color: '#a855f7' },
-    { label: 'x5',      mult: 5,   p: 1 / 120, color: '#ec4899' },
-    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#0ea5e9' },
-    { label: 'NU 1K',   full: 1000,  p: 1 / 200,   color: '#166534', big: true },
-    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
-    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#64748b' },
-    { label: 'NU 10K',  full: 10000, p: 1 / 2500,  color: '#7f1d1d', mega: true },
-    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
-    { label: 'LOSE',    mult: 0,   p: 0.23894, color: '#475569' },
-    { label: 'x0.5',    mult: 0.5, p: 0.075,   color: '#0ea5e9' },
-    { label: 'x3',      mult: 3,   p: 0.0225,  color: '#a855f7' },
-    { label: 'x1',      mult: 1,   p: 0.04,    color: '#22c55e' },
-    { label: 'x5',      mult: 5,   p: 1 / 120, color: '#ec4899' },
-    { label: 'x2',      mult: 2,   p: 0.02875, color: '#f97316' },
-    { label: 'JACKPOT', full: 50000, p: 1 / 20000, color: '#eab308', jackpot: true },
+    { label: 'x2',      mult: 2,   p: 0.0322565, color: '#f97316' },
+    { label: 'LOSE',    mult: 0,   p: 0.2069850, color: '#334155' },
+    { label: 'x0.5',    mult: 0.5, p: 0.0841995,   color: '#64748b' },
+    { label: 'x3',      mult: 3,   p: 0.0252535,  color: '#a855f7' },
+    { label: 'x5',      mult: 5,   p: 0.0093440, color: '#ec4899' },
+    { label: 'x0.5',    mult: 0.5, p: 0.0841995,   color: '#0ea5e9' },
+    { label: 'NU 1K',   full: 1000,  p: 0.0056320,   color: '#166534', big: true },
+    { label: 'x2',      mult: 2,   p: 0.0322565, color: '#f97316' },
+    { label: 'x0.5',    mult: 0.5, p: 0.0841995,   color: '#64748b' },
+    { label: 'NU 10K',  full: 10000, p: 0.0004510,  color: '#7f1d1d', mega: true },
+    { label: 'x2',      mult: 2,   p: 0.0322565, color: '#f97316' },
+    { label: 'LOSE',    mult: 0,   p: 0.2069850, color: '#475569' },
+    { label: 'x0.5',    mult: 0.5, p: 0.0841995,   color: '#0ea5e9' },
+    { label: 'x3',      mult: 3,   p: 0.0252535,  color: '#a855f7' },
+    { label: 'x1',      mult: 1,   p: 0.0448710,    color: '#22c55e' },
+    { label: 'x5',      mult: 5,   p: 0.0093440, color: '#ec4899' },
+    { label: 'x2',      mult: 2,   p: 0.0322565, color: '#f97316' },
+    { label: 'JACKPOT', full: 50000, p: 0.0000580, color: '#eab308', jackpot: true },
   ];
   for (const x of SEGMENTS) x.weight = x.p;
   // Big prize for a bet: full at Nu 100; at Nu 50 a quarter, at Nu 20 one twenty-fifth.
@@ -193,13 +191,15 @@
 
   // ---------- game logic ----------
   const isLose = (seg) => !seg.full && seg.mult === 0;
-  // After MAX_LOSE_RUN LOSE results in a row, the next spin is never LOSE.
+  // Picks the slice for a spin: independent of earlier spins, using the browser's secure random numbers.
+  function rand() {
+    const a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0] / 4294967296;
+  }
   function pickSegment() {
-    const noLose = (state.loseRun || 0) >= MAX_LOSE_RUN;
-    const total = SEGMENTS.reduce((s, x) => s + (noLose && isLose(x) ? 0 : x.weight), 0);
-    let roll = Math.random() * total;
+    let roll = rand() * TOTAL_WEIGHT;
     for (let i = 0; i < N; i++) {
-      if (noLose && isLose(SEGMENTS[i])) continue;
       roll -= SEGMENTS[i].weight;
       if (roll < 0) return i;
     }
@@ -272,7 +272,6 @@
 
   function finish(index, bet, bonusDue) {
     const seg = SEGMENTS[index];
-    state.loseRun = isLose(seg) ? (state.loseRun || 0) + 1 : 0;
     const payout = seg.full ? bigPrize(seg, bet) : Math.floor(bet * seg.mult);
     const net = payout - bet;
     state.nu += payout;
