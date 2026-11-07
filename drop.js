@@ -7,22 +7,18 @@
   if (!game) return;
 
   // ---------- settings ----------
-  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet.
-  // Layout: JACKPOT ×5 ×3 ×2 ×2 ×0.3 ×0.3 ×0.3 ×2 ×2 ×3 ×5 JACKPOT.
-  // p = chance on a normal drop; f = chance on a "guaranteed" drop. After MAX_SMALL_RUN ×0.3 results in a
-  // row, the next ball always lands on ×2 (90%) or ×3 (10%). Each slot's chance is set directly and the
-  // ball's bounce path is drawn to that slot. Tuned with simulations: ×2 about 1 in 4, ×3 1 in 31,
-  // ×5 1 in 170, JACKPOT about 1 in 2,500; players get back about 86% (Nu 100) to 95% (Nu 20, with
-  // the shared free bonus) of their bets over time.
-  const MAX_SMALL_RUN = 3;
+  // Slots from left to right (13 slots, 12 rows of pins). m = multiple of the bet, p = chance per drop.
+  // Layout: JACKPOT ×5 ×3 ×2 ×2 ×0.3 ×0.3 ×0.3 ×2 ×2 ×3 ×5 JACKPOT. Every drop is independent and purely
+  // random (no patterns or streak rules); the ball's bounce path is drawn to the chosen slot.
+  // Overall chances: ×0.3 72.6%, ×2 23.5% (1 in 4), ×3 3.2% (1 in 31), ×5 0.58% (1 in 172),
+  // JACKPOT 1 in 2,618. Players get back about 86% (Nu 100) to 95% (Nu 20, with the play bonus).
   const SLOTS = [
-    { t: 'JACKPOT', m: 100, p: 0.0005 / 2, f: 0 }, { t: '×5', m: 5, p: 0.0075 / 2, f: 0 }, { t: '×3', m: 3, p: 0.012 / 2, f: 0.1 / 2 },
-    { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 }, { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 },
-    { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 }, { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 }, { t: '×0.3', m: 0.3, p: 0.94 / 3, f: 0 },
-    { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 }, { t: '×2', m: 2, p: 0.04 / 4, f: 0.9 / 4 },
-    { t: '×3', m: 3, p: 0.012 / 2, f: 0.1 / 2 }, { t: '×5', m: 5, p: 0.0075 / 2, f: 0 }, { t: 'JACKPOT', m: 100, p: 0.0005 / 2, f: 0 },
+    { t: 'JACKPOT', m: 100, p: 0.0001910 }, { t: '×5', m: 5, p: 0.0029020 }, { t: '×3', m: 3, p: 0.0159990 },
+    { t: '×2', m: 2, p: 0.0588655 }, { t: '×2', m: 2, p: 0.0588655 },
+    { t: '×0.3', m: 0.3, p: 0.2421180 }, { t: '×0.3', m: 0.3, p: 0.2421180 }, { t: '×0.3', m: 0.3, p: 0.2421180 },
+    { t: '×2', m: 2, p: 0.0588655 }, { t: '×2', m: 2, p: 0.0588655 },
+    { t: '×3', m: 3, p: 0.0159990 }, { t: '×5', m: 5, p: 0.0029020 }, { t: 'JACKPOT', m: 100, p: 0.0001910 },
   ];
-  let smallRun = 0; // ×0.3 results in a row
   const BETS = [20, 50, 100, 500];
   const MAX_BALLS = 6; // balls in the air at once
 
@@ -116,13 +112,10 @@
   // Pick the slot by its chance, then a random bounce path that ends there
   // (slot k = k bounces to the right out of 12 rows, in a random order).
   function pickSlot() {
-    const key = smallRun >= MAX_SMALL_RUN ? 'f' : 'p';
-    const total = SLOTS.reduce((s, x) => s + x[key], 0);
+    const total = SLOTS.reduce((s, x) => s + x.p, 0);
     let r = rand() * total;
-    let slot = 3;
-    for (let i = 0; i < SLOTS.length; i++) { r -= SLOTS[i][key]; if (r < 0) { slot = i; break; } }
-    smallRun = SLOTS[slot].m < 1 ? smallRun + 1 : 0;
-    return slot;
+    for (let i = 0; i < SLOTS.length; i++) { r -= SLOTS[i].p; if (r < 0) return i; }
+    return 6;
   }
   function pathTo(slot) {
     const path = Array.from({ length: ROWS }, (_, i) => (i < slot ? 1 : 0));
