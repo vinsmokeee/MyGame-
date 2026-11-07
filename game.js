@@ -651,7 +651,17 @@
 
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   // Fields saved to the player's online account (so they can log in on any phone).
-  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'history', 'grants', 'prizeNoteSeen'];
+  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'history', 'grants', 'prizeNoteSeen', 'deviceId'];
+  // A hidden ID for this phone/browser (kept after log out), used to give the welcome gift once per phone.
+  function deviceId() {
+    let id = null;
+    try { id = localStorage.getItem('soma.device'); } catch (_) { /* ignore */ }
+    if (!id) {
+      id = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('');
+      try { localStorage.setItem('soma.device', id); } catch (_) { /* ignore */ }
+    }
+    return id;
+  }
   function refreshAll() {
     save();
     buildLegend();
@@ -696,9 +706,15 @@
       refreshAll();
     },
     // A new account: fresh start with the Nu 200 welcome gift.
-    startFresh({ username, gender, owner }) {
+    // gift: false when this phone already received the welcome gift for another account.
+    startFresh({ username, gender, owner, gift = true }) {
       state = normalize(null);
-      Object.assign(state, { name: username, username, gender, uid: owner });
+      Object.assign(state, { name: username, username, gender, uid: owner, deviceId: deviceId() });
+      if (!gift) {
+        state.nu = 0;
+        state.best = 0;
+        state.history = [{ label: 'Welcome gift already used on this phone', net: 0 }];
+      }
       refreshAll();
     },
     // Turn this phone's existing progress into an account (keeps Nu, ID and history).
@@ -707,7 +723,12 @@
       refreshAll();
     },
     clearLocal() { try { localStorage.removeItem(STORE_KEY); } catch (_) { /* ignore */ } },
-    showWelcome() { $('welcomeId').textContent = state.playerId; $('welcomeDialog').showModal(); },
+    showWelcome(noGift) {
+      $('welcomeId').textContent = state.playerId;
+      $('welcomeNoGift').hidden = !noGift;
+      $('welcomeDialog').showModal();
+    },
+    deviceId,
     maybeShowGameNote,
     // ----- shared wallet for the other SOMA games -----
     get view() { return currentView; },

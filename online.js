@@ -85,7 +85,9 @@ async function start() {
       } else {
         user = (await fb.createUserWithEmailAndPassword(auth, toEmail(username), password)).user;
       }
-      await enter(user, 'created', { username, gender });
+      // One welcome gift per phone: devices/{deviceId} remembers the first account made on this phone.
+      const gift = await claimWelcomeGift(user.uid, username);
+      await enter(user, 'created', { username, gender, gift });
     } catch (err) {
       const code = err && err.code;
       msg.textContent = code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use'
@@ -122,6 +124,19 @@ async function start() {
     }
   });
 
+  // Returns true if this phone has not had a welcome gift yet (and records it), false otherwise.
+  async function claimWelcomeGift(newUid, username) {
+    try { if (localStorage.getItem('soma.giftUsed')) return false; } catch (_) { /* ignore */ }
+    const ref = fb.doc(db, 'devices', game.deviceId());
+    try {
+      const snap = await Promise.race([fb.getDoc(ref), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]);
+      if (snap.exists() && snap.data().uid !== newUid) return false;
+      if (!snap.exists()) fb.setDoc(ref, { uid: newUid, username, createdAt: fb.serverTimestamp() }).catch(() => {});
+    } catch (_) { /* offline or slow: still give the gift rather than block a new player */ }
+    try { localStorage.setItem('soma.giftUsed', '1'); } catch (_) { /* ignore */ }
+    return true;
+  }
+
   // ---------- loading an account into the game ----------
   async function enter(user, mode, extra = {}) {
     uid = user.uid;
@@ -155,7 +170,7 @@ async function start() {
     const idReady = claimId();
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     game.accountReady();
-    if (mode === 'created') game.showWelcome();
+    if (mode === 'created') game.showWelcome(extra.gift === false);
     idReady.finally(saveNow);
   }
 
