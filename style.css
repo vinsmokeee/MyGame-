@@ -291,6 +291,13 @@ a.drawer-item { display: block; text-decoration: none; }
 .player-count strong { color: var(--text); }
 body:not([data-view="home"]) .player-count { display: none; }
 
+/* SOMA Spin bet buttons (same style as SOMA Drop) */
+.spin-view .controls { width: min(100%, 520px); flex-wrap: nowrap; gap: 6px; align-items: stretch; }
+.spin-bets { flex: 1; }
+.spin-bets button { white-space: nowrap; font-size: .9rem; }
+.spin-bets button:disabled { opacity: .55; }
+.spin-sound { width: 46px; height: auto; min-height: 44px; flex: none; font-size: 1.1rem; }
+
 /* ---------- lobby chat button (bottom right) ---------- */
 .home-chat {
   position: fixed; right: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;

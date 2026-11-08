@@ -71,16 +71,20 @@
     </div>
     <p id="message" class="message" role="status" aria-live="polite">You can bet Nu 20, 50, 100, 500.</p>
     <div class="controls">
-      <label class="bet">
-        Bet
-        <select id="bet">
-          <option value="20">Nu 20</option>
-          <option value="50">Nu 50</option>
-          <option value="100">Nu 100</option>
-          <option value="500">Nu 500</option>
-        </select>
-      </label>
-      <button id="sound" class="secondary" type="button" aria-pressed="true">Sound: on</button>
+      <!-- the bet list stays (hidden) as the source of the bets; players tap the buttons -->
+      <select id="bet" hidden aria-hidden="true" tabindex="-1">
+        <option value="20">Nu 20</option>
+        <option value="50">Nu 50</option>
+        <option value="100">Nu 100</option>
+        <option value="500">Nu 500</option>
+      </select>
+      <div id="spinBets" class="bets spin-bets" role="group" aria-label="Bet">
+        <button type="button" data-bet="20" class="on">Nu 20</button>
+        <button type="button" data-bet="50">Nu 50</button>
+        <button type="button" data-bet="100">Nu 100</button>
+        <button type="button" data-bet="500">Nu 500</button>
+      </div>
+      <button id="sound" class="icon-btn spin-sound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
     </div>
     </section>
 
