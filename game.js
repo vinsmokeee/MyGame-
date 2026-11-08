@@ -591,6 +591,8 @@
     $('profileDialog').showModal();
   }
   $('profileBtn').addEventListener('click', showProfile);
+  // Lobby chat button: opens the chat with the team.
+  $('homeChat').addEventListener('click', () => { if (window.LuckyChat) window.LuckyChat.open(); else chatUnavailable(); });
   $('pfCopy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(state.playerId); $('pfCopy').textContent = 'Copied ✓'; }
     catch (_) { $('pfCopy').textContent = 'Copy failed'; }
