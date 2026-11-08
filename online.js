@@ -183,16 +183,54 @@ async function start() {
     const idReady = claimId();
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     game.accountReady();
+    showPlayerCount();
+    if (mode === 'created') { countNewPlayer(); sendWelcomeMessage(); }
     if (mode === 'created') game.showWelcome(extra.gift === false);
+    if (mode === 'created') joinedPending = true; // the first save records when the account was created
     idReady.finally(saveNow);
+  }
+
+  // ---------- automatic welcome message from the team (new accounts) ----------
+  // Appears in the player's chat as a message from the team, with the red dot on the chat buttons.
+  // The text must match firestore.rules exactly.
+  const WELCOME_TEXT = 'Kuzuzangpo and welcome to SOMA Games! 🙏 Feel free to chat and connect with us if you have any inquiries.';
+  async function sendWelcomeMessage() {
+    try {
+      await fb.addDoc(fb.collection(chatRef(), 'messages'), { from: 'admin', text: WELCOME_TEXT, createdAt: fb.serverTimestamp() });
+      await fb.setDoc(chatRef(), {
+        playerId: game.playerId, name: game.name, lastMessage: 'You: 👋 Welcome message (automatic)',
+        updatedAt: fb.serverTimestamp(), unread: false, playerUnread: true,
+      }, { merge: true });
+    } catch (_) { /* not essential */ }
+  }
+
+  // ---------- real player count (stats/players.count) ----------
+  // +1 for every new account; the owner page also sets it to the real number of accounts.
+  const countRef = () => fb.doc(db, 'stats', 'players');
+  function countNewPlayer() {
+    fb.setDoc(countRef(), { count: fb.increment(1) }, { merge: true }).catch(() => {});
+  }
+  let countShown = false;
+  function showPlayerCount() {
+    if (countShown) return;
+    countShown = true;
+    fb.onSnapshot(countRef(), (snap) => {
+      const n = snap.exists() ? Number(snap.data().count) : 0;
+      $('playerCount').hidden = !(n > 0);
+      $('playerCountNum').textContent = n.toLocaleString('en-US');
+    }, () => {});
   }
 
   // ---------- saving progress to the account ----------
   let saveTimer = null;
+  let joinedPending = false;
   function saveNow() {
     clearTimeout(saveTimer);
     if (!uid || !entered) return Promise.resolve();
-    return fb.setDoc(playerRef(), { ...game.exportState(), updatedAt: fb.serverTimestamp() }, { merge: true })
+    const data = { ...game.exportState(), updatedAt: fb.serverTimestamp() };
+    if (joinedPending) data.joinedAt = fb.serverTimestamp(); // for the owner's "New players" list
+    return fb.setDoc(playerRef(), data, { merge: true })
+      .then(() => { if (data.joinedAt) joinedPending = false; })
       .catch(() => {});
   }
   function saveSoon() {

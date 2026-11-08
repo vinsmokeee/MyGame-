@@ -88,7 +88,9 @@ table.pay { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bo
 .pay .jp { color: #f4d27c; font-weight: 800; }
 
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; width: 100%; }
+.brand h1 { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .avatar-btn { margin-left: auto; } /* profile on the top right, menu on the top left */
 h1 { margin: 0; font-size: 2rem; letter-spacing: .04em; color: var(--accent); text-shadow: 0 2px 12px rgba(255, 212, 71, .35); }
 h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 
@@ -284,6 +286,30 @@ a.drawer-item { display: block; text-decoration: none; }
 .pf-stats div { background: var(--bg); border-radius: 10px; padding: 8px 10px; }
 .pf-stats dt { color: var(--muted); font-size: .75rem; }
 .pf-stats dd { margin: 2px 0 0; font-weight: 700; }
+
+.player-count { background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .85rem; color: var(--muted); }
+.player-count strong { color: var(--text); }
+body:not([data-view="home"]) .player-count { display: none; }
+
+/* SOMA Spin bet buttons (same style as SOMA Drop) */
+.spin-view .controls { width: min(100%, 520px); flex-wrap: nowrap; gap: 6px; align-items: stretch; }
+.spin-bets { flex: 1; }
+.spin-bets button { white-space: nowrap; font-size: .9rem; }
+.spin-bets button:disabled { opacity: .55; }
+.spin-sound { width: 46px; height: auto; min-height: 44px; flex: none; font-size: 1.1rem; }
+
+/* ---------- lobby chat button (bottom right) ---------- */
+.home-chat {
+  position: fixed; right: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;
+  border: 2px solid #f4d27c; cursor: pointer; font-size: 1.6rem; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #fff1c4, #d4a63a 55%, #7a5612);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .55);
+}
+.home-chat .unread-dot { top: 0; right: 0; }
+body:not([data-view="home"]) .home-chat { display: none; }
+body:has(#chatPanel:not([hidden])) .home-chat { display: none; } /* don't cover the chat's Send button */
+/* keep big-win messages clear of the chat button on the lobby */
+body[data-view="home"] .win-toast { bottom: 86px; }
 
 /* ---------- big-win announcements ---------- */
 .win-toast {

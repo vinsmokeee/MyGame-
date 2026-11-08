@@ -28,7 +28,8 @@ service cloud.firestore {
       allow read: if isAdmin() || isOwner(uid);
       allow create, update: if isOwner(uid)
         && request.resource.data.keys().hasOnly(['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins',
-                                                  'drops', 'history', 'grants', 'prizeNoteSeen', 'deviceId', 'updatedAt'])
+                                                  'drops', 'history', 'grants', 'prizeNoteSeen', 'deviceId', 'updatedAt',
+                                                  'joinedAt'])
         && optString(request.resource.data, 'name', 20)
         && optString(request.resource.data, 'username', 20)
         && optString(request.resource.data, 'gender', 20)
@@ -59,6 +60,17 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && optString(request.resource.data, 'username', 20)
         && request.resource.data.createdAt == request.time;
+    }
+
+    // Real player count shown in the lobby. New accounts add 1; the owner page sets the true total.
+    match /stats/players {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int
+        && (isAdmin()
+            || (resource == null && request.resource.data.count == 1)
+            || (resource != null && request.resource.data.count == resource.data.count + 1));
     }
 
     // Big-win announcements shown to other players for a few seconds.
@@ -94,6 +106,12 @@ service cloud.firestore {
           && optString(request.resource.data, 'image', 950000)
           && (('text' in request.resource.data && request.resource.data.text.size() > 0)
               || 'image' in request.resource.data)
+          && request.resource.data.createdAt == request.time;
+        // A new player's game adds the team's automatic welcome message (this exact text only).
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['from', 'text', 'createdAt'])
+          && request.resource.data.from == 'admin'
+          && request.resource.data.text == 'Kuzuzangpo and welcome to SOMA Games! 🙏 Feel free to chat and connect with us if you have any inquiries.'
           && request.resource.data.createdAt == request.time;
         // The owner can delete messages and photos they sent by hand (e.g. to the wrong player).
         // Recharge records ("Recharge of Nu X successfully added") are kept as history.

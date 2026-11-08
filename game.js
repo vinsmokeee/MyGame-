@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const START_NU = 200;
+  const START_NU = 100;
   const FULL_PRIZE_BET = 100; // the big prizes pay their listed amount at this bet
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
@@ -72,7 +72,7 @@
     try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (_) { /* storage unavailable */ }
     return normalize(s);
   }
-  // Fills in anything missing; a brand-new player starts with the Nu 200 welcome gift.
+  // Fills in anything missing; a brand-new player starts with the Nu 100 welcome gift.
   function normalize(s) {
     const fresh = !s || typeof s !== 'object';
     if (fresh) s = {};
@@ -331,6 +331,10 @@
     $('playerId').textContent = state.playerId;
     spinBtn.disabled = spinning || state.nu < Number(betSel.value);
     betSel.disabled = spinning;
+    document.querySelectorAll('#spinBets button').forEach((b) => {
+      b.disabled = spinning;
+      b.classList.toggle('on', b.dataset.bet === betSel.value);
+    });
 
     const done = state.spins % BONUS_EVERY;
     const left = BONUS_EVERY - done;
@@ -591,6 +595,8 @@
     $('profileDialog').showModal();
   }
   $('profileBtn').addEventListener('click', showProfile);
+  // Lobby chat button: opens the chat with the team.
+  $('homeChat').addEventListener('click', () => { if (window.LuckyChat) window.LuckyChat.open(); else chatUnavailable(); });
   $('pfCopy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(state.playerId); $('pfCopy').textContent = 'Copied ✓'; }
     catch (_) { $('pfCopy').textContent = 'Copy failed'; }
@@ -625,12 +631,20 @@
   });
   function setSound(on) {
     soundOn = on;
-    $('sound').textContent = `Sound: ${soundOn ? 'on' : 'off'}`;
+    $('sound').textContent = soundOn ? '🔊' : '🔇';
     $('sound').setAttribute('aria-pressed', String(soundOn));
     const d = $('dropSound');
     if (d) { d.textContent = soundOn ? '🔊' : '🔇'; d.setAttribute('aria-pressed', String(soundOn)); }
   }
   $('sound').addEventListener('click', () => setSound(!soundOn));
+  // SOMA Spin bet buttons: pick the bet in the (hidden) list and update everything as before.
+  document.querySelectorAll('#spinBets button').forEach((b) => {
+    b.addEventListener('click', () => {
+      if (spinning) return;
+      betSel.value = b.dataset.bet;
+      betSel.dispatchEvent(new Event('change'));
+    });
+  });
   if ($('dropSound')) $('dropSound').addEventListener('click', () => setSound(!soundOn));
 
   // Big wins are shared with other players online (online.js shows them as a short message).
@@ -707,7 +721,7 @@
     },
     get username() { return state.username || ''; },
     ensureDeviceId() { if (!state.deviceId) { state.deviceId = deviceId(); save(); } },
-    // A new account: fresh start with the Nu 200 welcome gift.
+    // A new account: fresh start with the Nu 100 welcome gift.
     // gift: false when this phone already received the welcome gift for another account.
     startFresh({ username, gender, owner, gift = true }) {
       state = normalize(null);
