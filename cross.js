@@ -344,11 +344,22 @@
     ctx.restore();
   }
 
-  function drawMarker(i, m, state) {
-    // the road's prize, painted on the road where the chicken lands
+  function drawMarker(i, m, state, hidden) {
+    // the road's prize, painted on the road where the chicken lands; a gold "?" until the chicken lands safely
     const x = colX(i);
     const r = 22;
     ctx.save();
+    if (hidden) {
+      const hg = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
+      hg.addColorStop(0, '#2a2d36'); hg.addColorStop(1, '#0c0d11');
+      ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = hg; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(232,196,106,.85)'; ctx.stroke();
+      ctx.fillStyle = '#f4d27c'; ctx.font = '900 17px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('?', x, CY + 7);
+      ctx.restore();
+      return;
+    }
     const col = m >= 10 ? ['#fbe7a8', '#8a6414'] : m >= 5 ? ['#c0263f', '#5e0f1c'] : m >= 2 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
     ctx.globalAlpha = state === 'passed' ? 0.4 : 1;
     if (state === 'current') { ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = 18; }
@@ -417,7 +428,7 @@
     const ms = round && (!round.over || chicken.road >= 0) ? round.m : roads.m;
     for (let i = 0; i < ROADS; i++) {
       const state = chicken.road === i && !chicken.dead ? 'current' : (round && !round.over && i < chicken.road) ? 'passed' : '';
-      drawMarker(i, ms[i], state);
+      drawMarker(i, ms[i], state, !barriers.has(i)); // revealed only where the chicken landed safely
     }
     for (const i of barriers) drawBarrier(i);
     for (const c of cars) drawCar(c);

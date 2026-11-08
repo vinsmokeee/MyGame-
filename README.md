@@ -17,7 +17,7 @@ https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
 - The owner page shows each player's spins and drops separately (`drops` in the account).
 
 ## SOMA Cross (`cross.js`)
-Help the chicken cross 10 roads. Each road shows a random prize (×0.5–×10; ×5 from road 4, ×10 from road 8). Every
+Help the chicken cross 10 roads. Each road hides a random prize (shown as ?, revealed when the chicken lands safely) (×0.5–×10; ×5 from road 4, ×10 from road 8). Every
 GO is one hop; after a safe hop a barrier protects the chicken and the player can CASH OUT that road's prize or hop on.
 A car can hit the chicken on any hop (bet lost). Chance of still being safe on road i = 0.88 × 0.97^(i−1) ÷ highest
 prize reached so far, so bigger prizes sit on busier roads and no strategy gets back more than ~87%. Bets Nu 20/50/100/500.
