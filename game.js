@@ -310,6 +310,7 @@
     }
     state.best = Math.max(state.best, state.nu);
     setMessage(text, kind);
+    if (window.SomaHaptic && (kind === 'win' || kind === 'jackpot')) window.SomaHaptic(kind === 'jackpot' ? 'big' : 'win');
     if (state.nu < minBet()) {
       setTimeout(() => setMessage('You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.', 'lose'), 2200);
     }
@@ -812,6 +813,7 @@
     },
     celebrate(level) {
       ensureAudio();
+      if (window.SomaHaptic) window.SomaHaptic(level === 'jackpot' || level === 'big' ? 'big' : level === 'win' ? 'win' : level === 'bonus' ? 'light' : 'lose');
       if (level === 'jackpot') { confetti(500); chime([523, 659, 784, 1047, 1319, 1568, 2093]); }
       else if (level === 'big') { confetti(120); chime([523, 659, 784, 1047]); }
       else if (level === 'win') chime([523, 659, 784]);

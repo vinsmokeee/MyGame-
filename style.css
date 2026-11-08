@@ -309,6 +309,9 @@ body:not([data-view="home"]) .player-count { display: none; }
 .spin-bets button:disabled { opacity: .55; }
 .spin-sound { width: 46px; height: auto; min-height: 44px; flex: none; font-size: 1.1rem; }
 
+/* inside Telegram: room for the phone's bottom edge */
+body.in-telegram .home-chat { bottom: calc(16px + env(safe-area-inset-bottom)); }
+
 /* ---------- lobby chat button (bottom right) ---------- */
 .home-chat {
   position: fixed; right: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;

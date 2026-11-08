@@ -265,6 +265,7 @@
         for (let k = 0; k < 14; k++) feathers.push({ x: chicken.x, y: CY - 10, vx: (rand() - 0.5) * 5, vy: -rand() * 4 - 1, r: rand() * 6, life: 1 });
         round.over = true;
         sfx.crash();
+        if (window.SomaHaptic) window.SomaHaptic('lose');
         game.settle({ payout: 0, net: -round.bet, label: `Cross hit (road ${next + 1})`, bonusDue: round.bonusDue });
         let text = `💥 Hit by a car on road ${next + 1}! You lost ${fmtNu(round.bet)}.`;
         if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
