@@ -42,6 +42,11 @@ JACKPOT ×100 about 1 in 2,500; players get back about 86–95%. Chances are `p`
 - The ☰ menu has **Contact us / Recharge Nu**: the chat with the owner (text and photos), with a **💰 Recharge Nu** button at the top that sends a recharge request (minimum Nu 100). A red dot on ☰ shows a new reply.
 - Progress is saved in the player's browser.
 
+## Telegram
+The bot @SOMAgamesbot opens this same site as a Telegram Mini App (https://t.me/SOMAgamesbot?startapp), so new games
+appear there automatically. `telegram.js` loads Telegram's script only when opened from Telegram, then opens full height,
+matches the header colours, shows Telegram's Back button inside games, stops swipe-to-close and adds vibrations.
+
 ## Owner tools (`admin.html`)
 Sign in with the owner's Firebase email/password to:
 - **Players:** see every player's name, ID and balance; give any amount of Nu at any time (it arrives in their game automatically).
