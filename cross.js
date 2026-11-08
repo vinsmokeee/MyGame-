@@ -167,7 +167,8 @@
   let feathers = [];
   const anim = { busy: false };
   let camX = 0;
-  const CAR_COLORS = ['#c0263f', '#1d4ed8', '#f4d27c', '#e5e7eb', '#15803d', '#7c3aed', '#ea580c', '#0f172a'];
+  // same casino palette as SOMA Spin and SOMA Drop: crimson, onyx, gold, ivory, emerald
+  const CAR_COLORS = ['#9e1d33', '#c0263f', '#1b1d24', '#d4a63a', '#fbf3df', '#0f6b44'];
   // a little texture for the asphalt, fixed so it does not flicker
   const SPECKS = Array.from({ length: 420 }, () => [rand() * WORLD_W, rand() * H, rand() < 0.5]);
 
@@ -330,7 +331,7 @@
     const w = LW - 10;
     ctx.save();
     // posts
-    ctx.fillStyle = '#9ca3af'; ctx.fillRect(x + 2, BARRIER_Y + 8, 4, 12); ctx.fillRect(x + w - 6, BARRIER_Y + 8, 4, 12);
+    ctx.fillStyle = '#b8862a'; ctx.fillRect(x + 2, BARRIER_Y + 8, 4, 12); ctx.fillRect(x + w - 6, BARRIER_Y + 8, 4, 12);
     rr(x, BARRIER_Y, w, 12, 4); ctx.save(); ctx.clip();
     for (let k = -2; k < 10; k++) { ctx.fillStyle = k % 2 ? '#111' : '#f4d27c'; ctx.beginPath(); ctx.moveTo(x + k * 10, BARRIER_Y + 12); ctx.lineTo(x + k * 10 + 10, BARRIER_Y); ctx.lineTo(x + k * 10 + 20, BARRIER_Y); ctx.lineTo(x + k * 10 + 10, BARRIER_Y + 12); ctx.fill(); }
     ctx.restore();
@@ -338,7 +339,7 @@
     const on = Math.floor(performance.now() / 300) % 2;
     for (const [lx, o] of [[x + 6, on], [x + w - 6, 1 - on]]) {
       ctx.beginPath(); ctx.arc(lx, BARRIER_Y - 3, 3, 0, Math.PI * 2);
-      ctx.fillStyle = o ? '#f97316' : '#7c2d12'; ctx.shadowColor = '#f97316'; ctx.shadowBlur = o ? 8 : 0; ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = o ? '#fff1c4' : '#8a6414'; ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = o ? 8 : 0; ctx.fill(); ctx.shadowBlur = 0;
     }
     ctx.restore();
   }
@@ -348,15 +349,15 @@
     const x = colX(i);
     const r = 22;
     ctx.save();
-    const col = m >= 10 ? ['#f4d27c', '#8a6414'] : m >= 5 ? ['#f87171', '#7a1426'] : m >= 2 ? ['#34d399', '#065f46'] : ['#9ca3af', '#374151'];
+    const col = m >= 10 ? ['#fbe7a8', '#8a6414'] : m >= 5 ? ['#c0263f', '#5e0f1c'] : m >= 2 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
     ctx.globalAlpha = state === 'passed' ? 0.4 : 1;
     if (state === 'current') { ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = 18; }
     const g = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
     g.addColorStop(0, col[0]); g.addColorStop(1, col[1]);
     ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.lineWidth = 2; ctx.strokeStyle = state === 'current' ? '#fff3c4' : 'rgba(255,255,255,.35)'; ctx.stroke();
-    ctx.fillStyle = m >= 10 ? '#2a1d00' : '#fff';
+    ctx.lineWidth = 2; ctx.strokeStyle = state === 'current' ? '#fff3c4' : 'rgba(232,196,106,.85)'; ctx.stroke();
+    ctx.fillStyle = m >= 10 ? '#2a1d00' : m >= 2 ? '#f4d27c' : '#a3a7b0';
     ctx.font = '900 15px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label(m), x, CY + 7);
@@ -372,18 +373,21 @@
     ctx.save();
     ctx.translate(-Math.round(camX), 0);
 
-    // start: grass and a curb
-    const grass = ctx.createLinearGradient(0, 0, SIDE, 0);
-    grass.addColorStop(0, '#14532d'); grass.addColorStop(1, '#166534');
-    ctx.fillStyle = grass; ctx.fillRect(0, 0, SIDE, H);
-    ctx.fillStyle = 'rgba(255,255,255,.06)';
-    for (let y = 6; y < H; y += 14) for (let x = 6; x < SIDE - 8; x += 12) ctx.fillRect(x + ((y / 14) % 2) * 6, y, 2, 5);
-    ctx.fillStyle = '#9ca3af'; ctx.fillRect(SIDE - 6, 0, 6, H);
-    ctx.fillStyle = '#d1d5db'; for (let y = 0; y < H; y += 20) ctx.fillRect(SIDE - 6, y, 6, 10);
+    // start: crimson carpet with a gold edge
+    const carpet = ctx.createLinearGradient(0, 0, SIDE, 0);
+    carpet.addColorStop(0, '#3a0b14'); carpet.addColorStop(1, '#7a1426');
+    ctx.fillStyle = carpet; ctx.fillRect(0, 0, SIDE, H);
+    ctx.strokeStyle = 'rgba(244,210,124,.18)'; ctx.lineWidth = 1;
+    for (let y = -SIDE; y < H; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(SIDE, y + SIDE); ctx.stroke(); }
+    const edge = ctx.createLinearGradient(SIDE - 6, 0, SIDE, 0);
+    edge.addColorStop(0, '#8a6414'); edge.addColorStop(0.5, '#fbe7a8'); edge.addColorStop(1, '#8a6414');
+    ctx.fillStyle = edge; ctx.fillRect(SIDE - 6, 0, 6, H);
+    ctx.save(); ctx.translate(SIDE / 2 - 4, 70); ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#f4d27c'; ctx.font = '900 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★ START ★', 0, 0); ctx.restore();
 
     // asphalt
     const road = ctx.createLinearGradient(SIDE, 0, SIDE + LW * ROADS, 0);
-    road.addColorStop(0, '#24262d'); road.addColorStop(0.5, '#2b2e36'); road.addColorStop(1, '#24262d');
+    road.addColorStop(0, '#0f1014'); road.addColorStop(0.5, '#1b1d24'); road.addColorStop(1, '#0f1014');
     ctx.fillStyle = road; ctx.fillRect(SIDE, 0, LW * ROADS, H);
     for (const [sx, sy, light] of SPECKS) {
       if (sx < SIDE || sx > SIDE + LW * ROADS) continue;
@@ -391,22 +395,23 @@
       ctx.fillRect(sx, sy, 2, 2);
     }
     // lane lines (white dashes moving with the traffic)
-    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.setLineDash([18, 16]);
+    ctx.strokeStyle = 'rgba(232,196,106,.7)'; ctx.lineWidth = 2; ctx.setLineDash([18, 16]);
     ctx.lineDashOffset = -(now / 22) % 34;
     for (let i = 1; i < ROADS; i++) { const x = SIDE + LW * i; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     ctx.setLineDash([]);
     // road numbers at the top
-    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(244,210,124,.55)'; ctx.font = '800 11px system-ui, sans-serif'; ctx.textAlign = 'center';
     for (let i = 0; i < ROADS; i++) ctx.fillText(String(i + 1), colX(i), 16);
 
-    // finish: curb + checkered strip
+    // finish: gold edge and gold/black checks
     const fx = SIDE + LW * ROADS;
-    ctx.fillStyle = '#9ca3af'; ctx.fillRect(fx, 0, 6, H);
-    ctx.fillStyle = '#d1d5db'; for (let y = 10; y < H; y += 20) ctx.fillRect(fx, y, 6, 10);
-    ctx.fillStyle = '#14532d'; ctx.fillRect(fx + 6, 0, SIDE - 6, H);
-    for (let y = 0; y < H; y += 12) for (let k = 0; k < 2; k++) { ctx.fillStyle = (y / 12 + k) % 2 ? '#111' : '#f5f5f5'; ctx.fillRect(fx + 10 + k * 12, y, 12, 12); }
+    const fedge = ctx.createLinearGradient(fx, 0, fx + 6, 0);
+    fedge.addColorStop(0, '#8a6414'); fedge.addColorStop(0.5, '#fbe7a8'); fedge.addColorStop(1, '#8a6414');
+    ctx.fillStyle = fedge; ctx.fillRect(fx, 0, 6, H);
+    ctx.fillStyle = '#0c0d11'; ctx.fillRect(fx + 6, 0, SIDE - 6, H);
+    for (let y = 0; y < H; y += 12) for (let k = 0; k < 2; k++) { ctx.fillStyle = (y / 12 + k) % 2 ? '#0c0d11' : '#d4a63a'; ctx.fillRect(fx + 10 + k * 12, y, 12, 12); }
     ctx.save(); ctx.translate(fx + SIDE / 2 + 12, H / 2); ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = '#f4d27c'; ctx.font = '900 14px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FINISH 🏁', 0, 0); ctx.restore();
+    ctx.fillStyle = '#f4d27c'; ctx.font = '900 14px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★ FINISH ★', 0, 0); ctx.restore();
 
     // prize markers on every road, at the chicken's height
     const ms = round && (!round.over || chicken.road >= 0) ? round.m : roads.m;

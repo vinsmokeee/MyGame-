@@ -50,13 +50,14 @@ body[data-view="home"] .play-only { display: none; }
 }
 a.game-card:hover { transform: translateY(-2px); border-color: #f4d27c; }
 .spin-card { background: radial-gradient(circle at 15% 50%, #9e1d33 0%, #3a0b14 55%, #15171e 100%); }
-.cross-card { background: radial-gradient(circle at 15% 50%, #b45309 0%, #4a2306 55%, #15171e 100%); }
+.cross-card { background: radial-gradient(circle at 15% 50%, #8a6414 0%, #3a2a08 55%, #15171e 100%); }
 .cross-board canvas { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; cursor: pointer; }
 .cross-actions { display: flex; gap: 8px; width: min(100%, 440px); }
 .cross-actions .cross-go { flex: 1; font-size: 1.15rem; padding: 12px; }
 .cross-cash {
   flex: 1.4; border: 0; border-radius: 12px; font: inherit; font-weight: 900; font-size: 1rem; letter-spacing: .03em; cursor: pointer;
-  background: linear-gradient(180deg, #34d399, #059669); color: #052e1b; padding: 12px; box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
+  background: linear-gradient(180deg, #c0263f, #7a1426); color: #fbe7a8; padding: 12px; border: 1px solid #d4a63a;
+  box-shadow: 0 6px 16px rgba(158, 29, 51, .45);
 }
 .cross-cash:disabled { background: var(--panel); color: var(--muted); box-shadow: none; cursor: not-allowed; border: 1px solid var(--border); }
 .cross-controls .bets button:disabled { opacity: .55; }
