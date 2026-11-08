@@ -142,11 +142,16 @@
   }
 
   // ---------- drawing ----------
-  const W = 360;
-  const H = 430;
-  const SIDE = 30; // sidewalks
-  const LW = (W - 2 * SIDE) / ROADS; // road width
-  const CY = H / 2 + 20; // chicken's height on the screen
+  // The world is wider than the screen: about 5 roads are visible and the view follows the chicken.
+  const W = 360; // visible width
+  const H = 460;
+  const SIDE = 64; // start (grass) and finish areas
+  const LW = 66; // road width
+  const WORLD_W = SIDE * 2 + LW * ROADS;
+  const CY = 300; // where the chicken stands (and the prize markers sit)
+  const BARRIER_Y = CY - 62;
+  const CAR_W = 46;
+  const CAR_H = 82;
   const canvas = $('crossBoard');
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -154,13 +159,17 @@
   canvas.height = H * dpr;
   canvas.style.aspectRatio = W + ' / ' + H;
   ctx.scale(dpr, dpr);
-  const colX = (i) => (i < 0 ? SIDE / 2 : SIDE + LW * i + LW / 2);
+  const colX = (i) => (i < 0 ? SIDE / 2 + 6 : i >= ROADS ? WORLD_W - SIDE / 2 : SIDE + LW * i + LW / 2);
 
   const chicken = { road: -1, x: colX(-1), y: CY, dead: false, alpha: 1 };
   const barriers = new Set();
-  let cars = []; // { lane, y, speed, color, killer }
+  let cars = []; // { lane, y, speed, color, killer, t0 }
+  let feathers = [];
   const anim = { busy: false };
-  const CAR_COLORS = ['#c0263f', '#0ea5e9', '#f4d27c', '#e5e7eb', '#22c55e', '#a855f7', '#f97316'];
+  let camX = 0;
+  const CAR_COLORS = ['#c0263f', '#1d4ed8', '#f4d27c', '#e5e7eb', '#15803d', '#7c3aed', '#ea580c', '#0f172a'];
+  // a little texture for the asphalt, fixed so it does not flicker
+  const SPECKS = Array.from({ length: 420 }, () => [rand() * WORLD_W, rand() * H, rand() < 0.5]);
 
   function hop(next, hit) {
     anim.busy = true;
@@ -173,12 +182,11 @@
     chicken.hopFrom = from; chicken.hopTo = to; chicken.hopT0 = t0; chicken.hopping = true;
     if (!hit) {
       // clear the way on the road the chicken lands on safely
-      cars = cars.filter((c) => !(c.lane === next && c.y > CY - 140 && c.y < CY + 40));
-    }
-    if (hit) {
+      cars = cars.filter((c) => !(c.lane === next && c.y + CAR_H > BARRIER_Y - 10 && c.y < CY + 40));
+    } else {
       // a car comes all of a sudden down that road
       cars = cars.filter((c) => c.lane !== next || c.y > CY + 40);
-      cars.push({ lane: next, y: -60, speed: 0, killer: true, color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)], t0: t0 + 160 });
+      cars.push({ lane: next, y: -CAR_H - 10, speed: 0, killer: true, color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)], t0: t0 + 170 });
     }
     setTimeout(() => {
       chicken.hopping = false;
@@ -187,6 +195,7 @@
       round.at = next;
       if (!hit) {
         barriers.add(next);
+        chicken.landT = performance.now();
         game.sound.beep(180, 0, 0.08, 0.09, 'square');
         const m = round.m[next];
         const val = Math.floor(round.bet * m);
@@ -200,10 +209,12 @@
         anim.busy = false;
         updateButtons();
       }
-    }, 300);
+    }, 320);
     if (hit) {
       setTimeout(() => {
         chicken.dead = true;
+        chicken.deadT = performance.now();
+        for (let k = 0; k < 14; k++) feathers.push({ x: chicken.x, y: CY - 10, vx: (rand() - 0.5) * 5, vy: -rand() * 4 - 1, r: rand() * 6, life: 1 });
         round.over = true;
         game.sound.beep(440, 0, 0.12, 0.12, 'sawtooth');
         game.sound.beep(330, 0.1, 0.18, 0.12, 'sawtooth');
@@ -213,13 +224,13 @@
         say(text, 'lose');
         anim.busy = false;
         endRound();
-      }, 620);
+      }, 640);
     }
     startLoop();
   }
   canvas.addEventListener('click', go);
 
-  function roundRect(x, y, w, h, r) {
+  function rr(x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -229,102 +240,247 @@
     ctx.closePath();
   }
 
-  function drawCar(c) {
-    const x = SIDE + LW * c.lane + 3;
-    const w = LW - 6;
-    const h = 46;
+  // ---- full-body chicken (facing right), about 54 px tall ----
+  function drawChicken(x, y, squash, dead, t) {
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 6;
-    roundRect(x, c.y, w, h, 6);
-    ctx.fillStyle = c.color; ctx.fill();
+    ctx.translate(x, y);
+    if (dead) { ctx.rotate(-Math.PI / 2.2); ctx.scale(1, 0.9); }
+    ctx.scale(1 + squash * 0.12, 1 - squash * 0.12);
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.ellipse(0, 22, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // legs
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    const step = dead ? 0 : Math.sin(t / 90) * (chicken.hopping ? 3 : 0);
+    for (const dx of [-4, 4]) {
+      ctx.beginPath(); ctx.moveTo(dx, 8); ctx.lineTo(dx + step * (dx > 0 ? 1 : -1), 19); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dx - 3, 20); ctx.lineTo(dx + 4, 20); ctx.stroke();
+    }
+    // tail feathers
+    ctx.fillStyle = '#f1f1f1';
+    ctx.beginPath(); ctx.moveTo(-12, -4); ctx.quadraticCurveTo(-24, -18, -20, -2); ctx.quadraticCurveTo(-26, 2, -14, 6); ctx.closePath(); ctx.fill();
+    // body
+    const bg = ctx.createRadialGradient(-3, -6, 3, 0, 0, 20);
+    bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#d9d4c7');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.ellipse(0, 0, 15, 12, 0, 0, Math.PI * 2); ctx.fill();
+    // neck + head
+    ctx.beginPath(); ctx.ellipse(9, -11, 7, 9, 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(11, -19, 7, 0, Math.PI * 2); ctx.fill();
+    // wing
+    ctx.fillStyle = '#e4ded0';
+    ctx.beginPath(); ctx.ellipse(-2, 1, 9, 6, -0.25, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-8, 2); ctx.lineTo(3, 3); ctx.moveTo(-7, 5); ctx.lineTo(2, 6); ctx.stroke();
+    // comb
+    ctx.fillStyle = '#dc2626';
+    for (const [cx, cy, r] of [[7, -26, 3], [11, -28, 3.4], [15, -26, 3]]) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); }
+    // beak
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath(); ctx.moveTo(17, -21); ctx.lineTo(24, -18); ctx.lineTo(17, -15); ctx.closePath(); ctx.fill();
+    // wattle
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath(); ctx.ellipse(16, -13, 2.2, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+    // eye
+    if (dead) {
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(11, -22); ctx.lineTo(15, -18); ctx.moveTo(15, -22); ctx.lineTo(11, -18); ctx.stroke();
+    } else {
+      ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(13, -20, 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(13.6, -20.6, 0.6, 0, Math.PI * 2); ctx.fill();
+    }
     ctx.restore();
-    ctx.fillStyle = 'rgba(20,24,32,.75)'; // windscreen
-    roundRect(x + 3, c.y + h - 18, w - 6, 9, 3); ctx.fill();
-    ctx.fillStyle = '#fff8c4'; // headlights (cars drive down)
-    ctx.fillRect(x + 3, c.y + h - 4, 5, 3); ctx.fillRect(x + w - 8, c.y + h - 4, 5, 3);
+  }
+
+  // ---- car seen from above, driving down ----
+  function drawCar(c) {
+    const x = SIDE + LW * c.lane + (LW - CAR_W) / 2;
+    const y = c.y;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 10; ctx.shadowOffsetY = 4;
+    // wheels
+    ctx.fillStyle = '#0b0b0d';
+    for (const [wx, wy] of [[-3, 12], [CAR_W - 3, 12], [-3, CAR_H - 26], [CAR_W - 3, CAR_H - 26]]) { rr(x + wx - 2, y + wy, 7, 15, 3); ctx.fill(); }
+    // body
+    const g = ctx.createLinearGradient(x, 0, x + CAR_W, 0);
+    g.addColorStop(0, c.color); g.addColorStop(0.5, '#ffffff22'); g.addColorStop(1, c.color);
+    rr(x, y, CAR_W, CAR_H, 12); ctx.fillStyle = c.color; ctx.fill();
+    ctx.restore();
+    rr(x, y, CAR_W, CAR_H, 12); ctx.fillStyle = 'rgba(255,255,255,.10)'; ctx.fill();
+    // roof + windows (front is at the bottom)
+    ctx.fillStyle = 'rgba(15,20,30,.85)';
+    rr(x + 7, y + CAR_H - 34, CAR_W - 14, 13, 4); ctx.fill(); // windscreen
+    rr(x + 8, y + 14, CAR_W - 16, 9, 3); ctx.fill(); // rear window
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    rr(x + 8, y + 25, CAR_W - 16, CAR_H - 61, 5); ctx.fill(); // roof shine
+    // lights
+    ctx.fillStyle = '#fff6c2';
+    rr(x + 5, y + CAR_H - 6, 10, 4, 2); ctx.fill(); rr(x + CAR_W - 15, y + CAR_H - 6, 10, 4, 2); ctx.fill();
+    ctx.fillStyle = '#ef4444';
+    rr(x + 5, y + 2, 9, 3, 1.5); ctx.fill(); rr(x + CAR_W - 14, y + 2, 9, 3, 1.5); ctx.fill();
+    // headlight beams
+    const beam = ctx.createLinearGradient(0, y + CAR_H, 0, y + CAR_H + 40);
+    beam.addColorStop(0, 'rgba(255,246,194,.35)'); beam.addColorStop(1, 'rgba(255,246,194,0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath(); ctx.moveTo(x + 4, y + CAR_H); ctx.lineTo(x + CAR_W - 4, y + CAR_H); ctx.lineTo(x + CAR_W + 4, y + CAR_H + 40); ctx.lineTo(x - 4, y + CAR_H + 40); ctx.closePath(); ctx.fill();
+  }
+
+  function drawBarrier(i) {
+    const x = SIDE + LW * i + 5;
+    const w = LW - 10;
+    ctx.save();
+    // posts
+    ctx.fillStyle = '#9ca3af'; ctx.fillRect(x + 2, BARRIER_Y + 8, 4, 12); ctx.fillRect(x + w - 6, BARRIER_Y + 8, 4, 12);
+    rr(x, BARRIER_Y, w, 12, 4); ctx.save(); ctx.clip();
+    for (let k = -2; k < 10; k++) { ctx.fillStyle = k % 2 ? '#111' : '#f4d27c'; ctx.beginPath(); ctx.moveTo(x + k * 10, BARRIER_Y + 12); ctx.lineTo(x + k * 10 + 10, BARRIER_Y); ctx.lineTo(x + k * 10 + 20, BARRIER_Y); ctx.lineTo(x + k * 10 + 10, BARRIER_Y + 12); ctx.fill(); }
+    ctx.restore();
+    // warning lights
+    const on = Math.floor(performance.now() / 300) % 2;
+    for (const [lx, o] of [[x + 6, on], [x + w - 6, 1 - on]]) {
+      ctx.beginPath(); ctx.arc(lx, BARRIER_Y - 3, 3, 0, Math.PI * 2);
+      ctx.fillStyle = o ? '#f97316' : '#7c2d12'; ctx.shadowColor = '#f97316'; ctx.shadowBlur = o ? 8 : 0; ctx.fill(); ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
+  function drawMarker(i, m, state) {
+    // the road's prize, painted on the road where the chicken lands
+    const x = colX(i);
+    const r = 22;
+    ctx.save();
+    const col = m >= 10 ? ['#f4d27c', '#8a6414'] : m >= 5 ? ['#f87171', '#7a1426'] : m >= 2 ? ['#34d399', '#065f46'] : ['#9ca3af', '#374151'];
+    ctx.globalAlpha = state === 'passed' ? 0.4 : 1;
+    if (state === 'current') { ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = 18; }
+    const g = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
+    g.addColorStop(0, col[0]); g.addColorStop(1, col[1]);
+    ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 2; ctx.strokeStyle = state === 'current' ? '#fff3c4' : 'rgba(255,255,255,.35)'; ctx.stroke();
+    ctx.fillStyle = m >= 10 ? '#2a1d00' : '#fff';
+    ctx.font = '900 15px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label(m), x, CY + 7);
+    ctx.restore();
   }
 
   function draw() {
     const now = performance.now();
+    // camera follows the chicken
+    const target = Math.max(0, Math.min(WORLD_W - W, (chicken.hopping ? chicken.hopTo : chicken.x) - W * 0.38));
+    camX += (target - camX) * 0.12;
     ctx.clearRect(0, 0, W, H);
-    // sidewalks
-    ctx.fillStyle = '#3a3f4b'; ctx.fillRect(0, 0, SIDE, H); ctx.fillRect(W - SIDE, 0, SIDE, H);
-    ctx.fillStyle = '#4b5160';
-    for (let y = 0; y < H; y += 24) { ctx.fillRect(2, y + 2, SIDE - 4, 20); ctx.fillRect(W - SIDE + 2, y + 2, SIDE - 4, 20); }
-    // roads
-    ctx.fillStyle = '#16181f'; ctx.fillRect(SIDE, 0, LW * ROADS, H);
-    ctx.strokeStyle = 'rgba(244, 210, 124, .5)'; ctx.lineWidth = 1.5; ctx.setLineDash([12, 12]);
-    ctx.lineDashOffset = -(now / 40) % 24;
+    ctx.save();
+    ctx.translate(-Math.round(camX), 0);
+
+    // start: grass and a curb
+    const grass = ctx.createLinearGradient(0, 0, SIDE, 0);
+    grass.addColorStop(0, '#14532d'); grass.addColorStop(1, '#166534');
+    ctx.fillStyle = grass; ctx.fillRect(0, 0, SIDE, H);
+    ctx.fillStyle = 'rgba(255,255,255,.06)';
+    for (let y = 6; y < H; y += 14) for (let x = 6; x < SIDE - 8; x += 12) ctx.fillRect(x + ((y / 14) % 2) * 6, y, 2, 5);
+    ctx.fillStyle = '#9ca3af'; ctx.fillRect(SIDE - 6, 0, 6, H);
+    ctx.fillStyle = '#d1d5db'; for (let y = 0; y < H; y += 20) ctx.fillRect(SIDE - 6, y, 6, 10);
+
+    // asphalt
+    const road = ctx.createLinearGradient(SIDE, 0, SIDE + LW * ROADS, 0);
+    road.addColorStop(0, '#24262d'); road.addColorStop(0.5, '#2b2e36'); road.addColorStop(1, '#24262d');
+    ctx.fillStyle = road; ctx.fillRect(SIDE, 0, LW * ROADS, H);
+    for (const [sx, sy, light] of SPECKS) {
+      if (sx < SIDE || sx > SIDE + LW * ROADS) continue;
+      ctx.fillStyle = light ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.25)';
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    // lane lines (white dashes moving with the traffic)
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.setLineDash([18, 16]);
+    ctx.lineDashOffset = -(now / 22) % 34;
     for (let i = 1; i < ROADS; i++) { const x = SIDE + LW * i; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
     ctx.setLineDash([]);
-    const ms = (round && !round.over) ? round.m : (round && round.over && chicken.road >= 0 ? round.m : roads.m);
-    // prize chips at the bottom of each road
+    // road numbers at the top
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i < ROADS; i++) ctx.fillText(String(i + 1), colX(i), 16);
+
+    // finish: curb + checkered strip
+    const fx = SIDE + LW * ROADS;
+    ctx.fillStyle = '#9ca3af'; ctx.fillRect(fx, 0, 6, H);
+    ctx.fillStyle = '#d1d5db'; for (let y = 10; y < H; y += 20) ctx.fillRect(fx, y, 6, 10);
+    ctx.fillStyle = '#14532d'; ctx.fillRect(fx + 6, 0, SIDE - 6, H);
+    for (let y = 0; y < H; y += 12) for (let k = 0; k < 2; k++) { ctx.fillStyle = (y / 12 + k) % 2 ? '#111' : '#f5f5f5'; ctx.fillRect(fx + 10 + k * 12, y, 12, 12); }
+    ctx.save(); ctx.translate(fx + SIDE / 2 + 12, H / 2); ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = '#f4d27c'; ctx.font = '900 14px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('FINISH 🏁', 0, 0); ctx.restore();
+
+    // prize markers on every road, at the chicken's height
+    const ms = round && (!round.over || chicken.road >= 0) ? round.m : roads.m;
     for (let i = 0; i < ROADS; i++) {
-      const m = ms[i];
-      const x = SIDE + LW * i + 2;
-      const passed = round && chicken.road >= i && !round.over;
-      const current = chicken.road === i && !chicken.dead;
-      roundRect(x, H - 34, LW - 4, 26, 6);
-      ctx.fillStyle = current ? '#f4d27c' : m >= 10 ? '#8a6414' : m >= 5 ? '#9e1d33' : m >= 2 ? '#0f6b44' : '#2a2d36';
-      ctx.globalAlpha = passed && !current ? 0.45 : 1;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = current ? '#2a1d00' : '#fbf3df';
-      ctx.font = `800 ${m >= 10 ? 10 : 11}px system-ui, sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label(m), x + (LW - 4) / 2, H - 21);
+      const state = chicken.road === i && !chicken.dead ? 'current' : (round && !round.over && i < chicken.road) ? 'passed' : '';
+      drawMarker(i, ms[i], state);
     }
-    // barriers on safe roads (above the chicken, so cars stop there)
-    for (const i of barriers) {
-      const x = SIDE + LW * i + 2;
-      const y = CY - 46;
-      ctx.save();
-      roundRect(x, y, LW - 4, 12, 3); ctx.clip();
-      for (let k = -2; k < 6; k++) { ctx.fillStyle = k % 2 ? '#111' : '#f4d27c'; ctx.beginPath(); ctx.moveTo(x + k * 8, y + 12); ctx.lineTo(x + k * 8 + 8, y); ctx.lineTo(x + k * 8 + 16, y); ctx.lineTo(x + k * 8 + 8, y + 12); ctx.fill(); }
-      ctx.restore();
-    }
-    // cars
+    for (const i of barriers) drawBarrier(i);
     for (const c of cars) drawCar(c);
+
     // chicken
     let cx = chicken.x;
-    let cy = chicken.y;
+    let cy = CY - 14;
+    let squash = 0;
     if (chicken.hopping) {
-      const t = Math.min(1, (now - chicken.hopT0) / 300);
+      const t = Math.min(1, (now - chicken.hopT0) / 320);
       cx = chicken.hopFrom + (chicken.hopTo - chicken.hopFrom) * t;
-      cy = CY - Math.sin(t * Math.PI) * 18;
+      cy = CY - 14 - Math.sin(t * Math.PI) * 30;
+      squash = -Math.sin(t * Math.PI) * 0.6;
+    } else if (chicken.landT && now - chicken.landT < 160) {
+      squash = 1 - (now - chicken.landT) / 160;
+    } else {
+      cy += Math.sin(now / 260) * 1.2; // idle bob
     }
-    ctx.save();
-    ctx.globalAlpha = chicken.alpha;
-    ctx.font = `${chicken.dead ? 26 : 24}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(chicken.dead ? '💥' : '🐔', cx, cy);
+    if (!chicken.dead || now - chicken.deadT < 1200) drawChicken(cx, cy, squash, chicken.dead, now);
+    // the prize the chicken is standing on, shown just below it
+    if (round && !chicken.dead && !chicken.hopping && chicken.road >= 0) {
+      const m = round.m[chicken.road];
+      const text = `${label(m)} = ${fmtNu(Math.floor(round.bet * m))}`;
+      ctx.font = '900 13px system-ui, -apple-system, sans-serif';
+      const tw = ctx.measureText(text).width + 18;
+      const lx = Math.max(SIDE + 4, Math.min(WORLD_W - SIDE - tw - 4, chicken.x - tw / 2));
+      rr(lx, CY + 32, tw, 24, 12);
+      ctx.fillStyle = '#f4d27c'; ctx.shadowColor = 'rgba(244,210,124,.6)'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#2a1d00'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, lx + tw / 2, CY + 44);
+    }
+    // feathers after a hit
+    for (const f of feathers) {
+      f.x += f.vx; f.y += f.vy; f.vy += 0.15; f.life -= 0.012;
+      ctx.save(); ctx.globalAlpha = Math.max(0, f.life); ctx.fillStyle = '#f5f5f4';
+      ctx.translate(f.x, f.y); ctx.rotate(f.r + f.life * 4);
+      ctx.beginPath(); ctx.ellipse(0, 0, 5, 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    feathers = feathers.filter((f) => f.life > 0);
     ctx.restore();
-    // finish line
-    ctx.fillStyle = '#f4d27c'; ctx.font = '800 9px system-ui, sans-serif'; ctx.textAlign = 'center';
-    ctx.save(); ctx.translate(W - SIDE / 2, 40); ctx.rotate(Math.PI / 2); ctx.fillText('FINISH 🏁', 0, 0); ctx.restore();
+
+    // edge fade so it reads as a wider street
+    const fade = ctx.createLinearGradient(W - 26, 0, W, 0);
+    fade.addColorStop(0, 'rgba(11,12,16,0)'); fade.addColorStop(1, 'rgba(11,12,16,.55)');
+    ctx.fillStyle = fade; ctx.fillRect(W - 26, 0, 26, H);
   }
 
   // ambient traffic: cars appear at random on roads without a barrier
   let lastSpawn = 0;
   function stepCars(now) {
-    if (now - lastSpawn > 450 + rand() * 700) {
+    if (now - lastSpawn > 380 + rand() * 650) {
       lastSpawn = now;
       const free = [];
       for (let i = 0; i < ROADS; i++) if (!barriers.has(i) && chicken.road !== i) free.push(i);
       if (free.length) {
         const lane = free[Math.floor(rand() * free.length)];
-        if (!cars.some((c) => c.lane === lane && c.y < 60)) {
-          cars.push({ lane, y: -50, speed: 3 + rand() * 4, color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)] });
+        if (!cars.some((c) => c.lane === lane && c.y < 40)) {
+          cars.push({ lane, y: -CAR_H - 10, speed: 3.5 + rand() * 5, color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)] });
         }
       }
     }
     for (const c of cars) {
-      if (c.killer) { if (now >= c.t0) c.y = -60 + (now - c.t0) * 0.75; continue; } // races down through the chicken
-      const stop = CY - 96; // cars stop at a barrier (if they have not passed it yet)
+      if (c.killer) { if (now >= c.t0) c.y = -CAR_H - 10 + (now - c.t0) * 0.95; continue; } // races down through the chicken
+      const stop = BARRIER_Y - CAR_H - 6; // cars stop at a barrier (if they have not passed it yet)
       if (barriers.has(c.lane) && c.y <= stop) c.y = Math.min(stop, c.y + c.speed);
       else c.y += c.speed;
     }
-    cars = cars.filter((c) => c.y < H + 10);
+    cars = cars.filter((c) => c.y < H + 20);
   }
 
   let looping = false;
