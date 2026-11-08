@@ -162,7 +162,7 @@
     round.over = true;
     game.settle({ payout, net: payout - round.bet, label: `Cross ${label(m)} (road ${round.at + 1})`, bonusDue: round.bonusDue });
     game.announceWin('SOMA Cross', label(m), payout, m);
-    let text = payout > round.bet ? `🎉 Cashed out ${label(m)}: you won ${fmtNu(payout)}!` : `Cashed out ${label(m)}: ${fmtNu(payout)} back.`;
+    let text = payout > round.bet ? `🎉 Cashed out ${label(m)}: ${fmtNu(payout)} added to your balance!` : `Cashed out ${label(m)}: ${fmtNu(payout)} added to your balance.`;
     if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
     say(text, payout > round.bet ? (m >= 5 ? 'jackpot' : 'win') : '');
     if (!auto) {
