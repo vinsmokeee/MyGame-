@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const START_NU = 200;
+  const START_NU = 100;
   const FULL_PRIZE_BET = 100; // the big prizes pay their listed amount at this bet
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
@@ -72,7 +72,7 @@
     try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (_) { /* storage unavailable */ }
     return normalize(s);
   }
-  // Fills in anything missing; a brand-new player starts with the Nu 200 welcome gift.
+  // Fills in anything missing; a brand-new player starts with the Nu 100 welcome gift.
   function normalize(s) {
     const fresh = !s || typeof s !== 'object';
     if (fresh) s = {};
@@ -721,7 +721,7 @@
     },
     get username() { return state.username || ''; },
     ensureDeviceId() { if (!state.deviceId) { state.deviceId = deviceId(); save(); } },
-    // A new account: fresh start with the Nu 200 welcome gift.
+    // A new account: fresh start with the Nu 100 welcome gift.
     // gift: false when this phone already received the welcome gift for another account.
     startFresh({ username, gender, owner, gift = true }) {
       state = normalize(null);

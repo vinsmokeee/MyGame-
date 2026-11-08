@@ -22,7 +22,7 @@ JACKPOT. Every drop is independent and random. ×2 about 1 in 4, ×3 1 in 31, ×
 JACKPOT ×100 about 1 in 2,500; players get back about 86–95%. Chances are `p` in `SLOTS` in `drop.js`. Sound effects for the drop, pins and landing; 🔊 toggles sound.
 
 ## SOMA Spin
-- Players start with Nu 200, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).
+- Players start with Nu 100, pick a bet (Nu 20/50/100/500) and press **SPIN** (or Space).
 - Every spin is independent and random: LOSE 41%. ×0.5 about 1 in 3, ×2 1 in 8, ×3 1 in 20,
   ×5 1 in 50. Three big prizes pay their listed amount at a Nu 100 bet (smaller share at lower bets, 5× at Nu 500): Nu 1,000 (~1 in 180),
   Nu 10,000 (~1 in 2,200) and the Jackpot Nu 50,000 (~1 in 15,000). Over time players get back about 82–87% of
