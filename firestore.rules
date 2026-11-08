@@ -107,6 +107,12 @@ service cloud.firestore {
           && (('text' in request.resource.data && request.resource.data.text.size() > 0)
               || 'image' in request.resource.data)
           && request.resource.data.createdAt == request.time;
+        // A new player's game adds the team's automatic welcome message (this exact text only).
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['from', 'text', 'createdAt'])
+          && request.resource.data.from == 'admin'
+          && request.resource.data.text == 'Kuzuzangpo and welcome to SOMA Games! 🙏 Feel free to chat and connect with us if you have any inquiries.'
+          && request.resource.data.createdAt == request.time;
         // The owner can delete messages and photos they sent by hand (e.g. to the wrong player).
         // Recharge records ("Recharge of Nu X successfully added") are kept as history.
         allow delete: if isAdmin() && resource.data.from == 'admin'

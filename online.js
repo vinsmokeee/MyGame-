@@ -184,10 +184,24 @@ async function start() {
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     game.accountReady();
     showPlayerCount();
-    if (mode === 'created') countNewPlayer();
+    if (mode === 'created') { countNewPlayer(); sendWelcomeMessage(); }
     if (mode === 'created') game.showWelcome(extra.gift === false);
     if (mode === 'created') joinedPending = true; // the first save records when the account was created
     idReady.finally(saveNow);
+  }
+
+  // ---------- automatic welcome message from the team (new accounts) ----------
+  // Appears in the player's chat as a message from the team, with the red dot on the chat buttons.
+  // The text must match firestore.rules exactly.
+  const WELCOME_TEXT = 'Kuzuzangpo and welcome to SOMA Games! 🙏 Feel free to chat and connect with us if you have any inquiries.';
+  async function sendWelcomeMessage() {
+    try {
+      await fb.addDoc(fb.collection(chatRef(), 'messages'), { from: 'admin', text: WELCOME_TEXT, createdAt: fb.serverTimestamp() });
+      await fb.setDoc(chatRef(), {
+        playerId: game.playerId, name: game.name, lastMessage: 'You: 👋 Welcome message (automatic)',
+        updatedAt: fb.serverTimestamp(), unread: false, playerUnread: true,
+      }, { merge: true });
+    } catch (_) { /* not essential */ }
   }
 
   // ---------- real player count (stats/players.count) ----------

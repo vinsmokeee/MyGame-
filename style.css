@@ -307,6 +307,7 @@ body:not([data-view="home"]) .player-count { display: none; }
 }
 .home-chat .unread-dot { top: 0; right: 0; }
 body:not([data-view="home"]) .home-chat { display: none; }
+body:has(#chatPanel:not([hidden])) .home-chat { display: none; } /* don't cover the chat's Send button */
 /* keep big-win messages clear of the chat button on the lobby */
 body[data-view="home"] .win-toast { bottom: 86px; }
 
