@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Post to SOMA channel</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .card { background: var(--panel); border-radius: 14px; padding: 16px; }
+  .card .field { margin-bottom: 12px; }
+  .card input, .card textarea { display: block; width: 100%; margin-top: 4px; }
+  .card textarea { min-height: 280px; line-height: 1.4; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .check { display: flex; gap: 8px; align-items: center; color: var(--muted); margin-bottom: 12px; }
+  .check input { width: auto; margin: 0; }
+  .out { white-space: pre-wrap; font-size: .9rem; margin: 10px 0 0; }
+  .out.ok { color: var(--win); }
+  .out.err { color: var(--lose); }
+  .warn { color: #fca5a5; font-size: .85rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top"><h1>Post to channel</h1></header>
+  <section class="card">
+    <p class="hint">Your bot posts this message with a <strong>Play</strong> button in your channel, and pins it. The bot must be an admin of the channel with “Post Messages” (and “Pin Messages” to pin).</p>
+    <label class="field">Bot token (from BotFather → /mybots → SOMAgamesbot → API Token)
+      <input id="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="7123456789:AAH...">
+    </label>
+    <p class="warn">The token is only used on this phone to send the post. It is not saved or sent anywhere else.</p>
+    <label class="field">Channel
+      <input id="chat" value="@SOMAgamesOfficial" autocapitalize="off" spellcheck="false">
+    </label>
+    <label class="field">Message
+      <textarea id="text"></textarea>
+    </label>
+    <label class="field">Button text
+      <input id="btnText" value="🎮 Play SOMA Games">
+    </label>
+    <label class="field">Button link
+      <input id="btnUrl" value="https://t.me/SOMAgamesbot?startapp" autocapitalize="off" spellcheck="false">
+    </label>
+    <label class="check"><input id="pin" type="checkbox" checked> Pin the post</label>
+    <div class="row"><button id="send" class="primary" type="button">Post to channel</button></div>
+    <p id="out" class="out" role="status"></p>
+  </section>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  $('text').value = [
+    '🎮✨ Kuzuzangpo la! Welcome to SOMA Games ✨🎮',
+    '',
+    'Three exciting games, one account:',
+    '',
+    '🎡 SOMA Spin – Spin the wheel! Jackpot up to Nu 250,000',
+    '🎯 SOMA Drop – Drop the ball through the pins! Jackpot ×100 your bet',
+    '🐔 SOMA Cross – Help the chicken cross the roads! Win up to ×10 your bet',
+    '',
+    '🎁 New players get a Nu 100 welcome gift',
+    '🔁 Free Nu 20 bonus every 10 plays',
+    '🏆 See live wins from other players',
+    '💬 24/7 chat support with our team – recharge anytime by messaging us from the game',
+    '',
+    '👇 Tap the button below to play!',
+    '',
+    'More games coming soon! Stay tuned 🔔',
+    '',
+    'Tashi Delek, Good Luck 🍀',
+  ].join('\n');
+
+  const say = (t, ok) => { $('out').textContent = t; $('out').className = 'out ' + (ok ? 'ok' : 'err'); };
+  const explain = (d) => {
+    if (/Not Found/i.test(d)) return 'The token looks wrong. Copy it again from BotFather (no spaces).';
+    if (/Unauthorized/i.test(d)) return 'The token is wrong or was changed. Copy it again from BotFather.';
+    if (/chat not found/i.test(d)) return 'Channel not found. Check the channel name, e.g. @SOMAgamesOfficial.';
+    if (/not enough rights|administrator|Forbidden/i.test(d)) return 'The bot is not an admin with “Post Messages” in this channel.';
+    return '';
+  };
+
+  async function call(token, method, body) {
+    const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    return r.json();
+  }
+
+  $('send').addEventListener('click', async () => {
+    const token = $('token').value.replace(/\s+/g, ''); // remove any hidden spaces or line breaks
+    const chat = $('chat').value.trim();
+    if (!/^\d+:[\w-]+$/.test(token)) { say('That does not look like a bot token. It should look like 7123456789:AAH…', false); return; }
+    if (!chat) { say('Enter the channel, e.g. @SOMAgamesOfficial.', false); return; }
+    const body = {
+      chat_id: chat,
+      text: $('text').value,
+      reply_markup: { inline_keyboard: [[{ text: $('btnText').value || '🎮 Play', url: $('btnUrl').value.trim() }]] },
+    };
+    $('send').disabled = true;
+    say('Posting…', true);
+    try {
+      const res = await call(token, 'sendMessage', body);
+      if (!res.ok) { say(`Not posted: ${res.description}\n${explain(res.description)}`, false); return; }
+      let note = '✅ Posted to the channel!';
+      if ($('pin').checked) {
+        const p = await call(token, 'pinChatMessage', { chat_id: chat, message_id: res.result.message_id, disable_notification: false });
+        note += p.ok ? ' 📌 Pinned.' : `\n(Could not pin: ${p.description}. Pin it by hand: long-press the post → Pin.)`;
+      }
+      say(note, true);
+    } catch (_) {
+      // If the phone blocks the direct request, open the full address instead (shows {"ok":true…} when it works).
+      const q = new URLSearchParams({ chat_id: chat, text: body.text, reply_markup: JSON.stringify(body.reply_markup) });
+      location.href = `https://api.telegram.org/bot${token}/sendMessage?${q}`;
+    } finally {
+      $('send').disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>
