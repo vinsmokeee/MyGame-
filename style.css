@@ -32,7 +32,7 @@ body {
   gap: 14px;
 }
 /* Each game view: the board/wheel next to its prize panel (stacked on phones). */
-.view.spin-view:not([hidden]), .view.drop-view:not([hidden]) {
+.view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]) {
   display: grid; grid-template-columns: 1fr 280px; grid-template-areas: "back back" "stage side"; gap: 14px 20px;
 }
 .back-link { grid-area: back; color: var(--muted); text-decoration: none; font-weight: 600; justify-self: start; }
@@ -50,6 +50,16 @@ body[data-view="home"] .play-only { display: none; }
 }
 a.game-card:hover { transform: translateY(-2px); border-color: #f4d27c; }
 .spin-card { background: radial-gradient(circle at 15% 50%, #9e1d33 0%, #3a0b14 55%, #15171e 100%); }
+.cross-card { background: radial-gradient(circle at 15% 50%, #b45309 0%, #4a2306 55%, #15171e 100%); }
+.cross-board canvas { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; cursor: pointer; }
+.cross-actions { display: flex; gap: 8px; width: min(100%, 440px); }
+.cross-actions .cross-go { flex: 1; font-size: 1.15rem; padding: 12px; }
+.cross-cash {
+  flex: 1.4; border: 0; border-radius: 12px; font: inherit; font-weight: 900; font-size: 1rem; letter-spacing: .03em; cursor: pointer;
+  background: linear-gradient(180deg, #34d399, #059669); color: #052e1b; padding: 12px; box-shadow: 0 6px 16px rgba(5, 150, 105, .35);
+}
+.cross-cash:disabled { background: var(--panel); color: var(--muted); box-shadow: none; cursor: not-allowed; border: 1px solid var(--border); }
+.cross-controls .bets button:disabled { opacity: .55; }
 .drop-card { background: radial-gradient(circle at 15% 50%, #0f6b44 0%, #06301f 55%, #15171e 100%); }
 .game-card.soon { background: var(--panel); border-style: dashed; border-color: var(--border); opacity: .7; box-shadow: none; }
 .game-art { font-size: 2.6rem; line-height: 1; flex: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
@@ -365,7 +375,7 @@ body[data-view="home"] .win-toast { bottom: 86px; }
 #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 
 @media (max-width: 760px) {
-  .view.spin-view:not([hidden]), .view.drop-view:not([hidden]) { grid-template-columns: 1fr; grid-template-areas: "back" "stage" "side"; }
+  .view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]) { grid-template-columns: 1fr; grid-template-areas: "back" "stage" "side"; }
   h1 { font-size: 1.5rem; }
   .stats { width: 100%; }
   .stat { flex: 1; min-width: 0; padding: 8px 6px; }
