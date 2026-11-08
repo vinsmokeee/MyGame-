@@ -88,7 +88,9 @@ table.pay { width: 100%; border-collapse: collapse; font-size: .85rem; margin-bo
 .pay .jp { color: #f4d27c; font-weight: 800; }
 
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; width: 100%; }
+.brand h1 { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand .avatar-btn { margin-left: auto; } /* profile on the top right, menu on the top left */
 h1 { margin: 0; font-size: 2rem; letter-spacing: .04em; color: var(--accent); text-shadow: 0 2px 12px rgba(255, 212, 71, .35); }
 h2 { font-size: 1rem; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 
