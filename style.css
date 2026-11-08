@@ -50,7 +50,7 @@ body[data-view="home"] .play-only { display: none; }
 }
 a.game-card:hover { transform: translateY(-2px); border-color: #f4d27c; }
 .spin-card { background: radial-gradient(circle at 15% 50%, #9e1d33 0%, #3a0b14 55%, #15171e 100%); }
-.cross-card { background: radial-gradient(circle at 15% 50%, #8a6414 0%, #3a2a08 55%, #15171e 100%); }
+.cross-card { background: radial-gradient(circle at 15% 50%, #1d4ed8 0%, #0b1f5c 55%, #15171e 100%); }
 .cross-board canvas { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; cursor: pointer; }
 .cross-actions { display: flex; gap: 8px; width: min(100%, 440px); }
 .cross-actions .cross-go { flex: 1; font-size: 1.15rem; padding: 12px; }
