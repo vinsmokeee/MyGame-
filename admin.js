@@ -62,6 +62,9 @@ async function start() {
       fb.query(fb.collection(db, 'players'), fb.orderBy('updatedAt', 'desc'), fb.limit(500)),
       (snap) => {
         players = new Map(snap.docs.map((d) => [d.id, { uid: d.id, ...d.data({ serverTimestamps: 'estimate' }) }]));
+        // Keep the public player count in step with the real number of accounts.
+        // (Only while the list holds every account; it shows up to 500.)
+        if (players.size < 500) fb.setDoc(fb.doc(db, 'stats', 'players'), { count: players.size }, { merge: true }).catch(() => {});
         renderPlayers();
         renderIndex();
         if (current) renderThreadHead();

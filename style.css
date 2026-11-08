@@ -287,6 +287,10 @@ a.drawer-item { display: block; text-decoration: none; }
 .pf-stats dt { color: var(--muted); font-size: .75rem; }
 .pf-stats dd { margin: 2px 0 0; font-weight: 700; }
 
+.player-count { background: var(--panel); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; font-size: .85rem; color: var(--muted); }
+.player-count strong { color: var(--text); }
+body:not([data-view="home"]) .player-count { display: none; }
+
 /* ---------- lobby chat button (bottom right) ---------- */
 .home-chat {
   position: fixed; right: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;

@@ -183,8 +183,27 @@ async function start() {
     const idReady = claimId();
     await Promise.race([idReady, new Promise((r) => setTimeout(r, 2500))]);
     game.accountReady();
+    showPlayerCount();
+    if (mode === 'created') countNewPlayer();
     if (mode === 'created') game.showWelcome(extra.gift === false);
     idReady.finally(saveNow);
+  }
+
+  // ---------- real player count (stats/players.count) ----------
+  // +1 for every new account; the owner page also sets it to the real number of accounts.
+  const countRef = () => fb.doc(db, 'stats', 'players');
+  function countNewPlayer() {
+    fb.setDoc(countRef(), { count: fb.increment(1) }, { merge: true }).catch(() => {});
+  }
+  let countShown = false;
+  function showPlayerCount() {
+    if (countShown) return;
+    countShown = true;
+    fb.onSnapshot(countRef(), (snap) => {
+      const n = snap.exists() ? Number(snap.data().count) : 0;
+      $('playerCount').hidden = !(n > 0);
+      $('playerCountNum').textContent = n.toLocaleString('en-US');
+    }, () => {});
   }
 
   // ---------- saving progress to the account ----------

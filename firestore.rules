@@ -61,6 +61,17 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
     }
 
+    // Real player count shown in the lobby. New accounts add 1; the owner page sets the true total.
+    match /stats/players {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['count'])
+        && request.resource.data.count is int
+        && (isAdmin()
+            || (resource == null && request.resource.data.count == 1)
+            || (resource != null && request.resource.data.count == resource.data.count + 1));
+    }
+
     // Big-win announcements shown to other players for a few seconds.
     match /wins/{winId} {
       allow read: if request.auth != null;
