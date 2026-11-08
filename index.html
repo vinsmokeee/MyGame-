@@ -48,6 +48,14 @@
         </span>
         <span class="game-play">Play</span>
       </a>
+      <a class="game-card cross-card" href="#cross">
+        <span class="game-art" aria-hidden="true">🐔</span>
+        <span class="game-info">
+          <strong>SOMA Cross</strong>
+          <span>Help the chicken cross the roads. Win up to ×10 your bet.</span>
+        </span>
+        <span class="game-play">Play</span>
+      </a>
       <div class="game-card soon" aria-disabled="true">
         <span class="game-art" aria-hidden="true">✨</span>
         <span class="game-info"><strong>More games</strong><span>Coming soon</span></span>
@@ -93,6 +101,37 @@
     <ul id="legend" class="legend"></ul>
     <h2>History</h2>
     <ol id="history" class="history"></ol>
+    </section>
+  </section>
+
+  <!-- ===== SOMA Cross ===== -->
+  <section id="view-cross" class="view cross-view" data-title="SOMA Cross" hidden>
+    <a class="back-link" href="#">← All games</a>
+    <section class="stage">
+      <div class="board cross-board"><canvas id="crossBoard" aria-label="SOMA Cross roads"></canvas></div>
+      <p id="crossMessage" class="message" role="status" aria-live="polite">Pick a bet and press GO.</p>
+      <div class="drop-controls cross-controls">
+        <div id="crossBets" class="bets" role="group" aria-label="Bet">
+          <button type="button" data-bet="20" class="on">Nu 20</button>
+          <button type="button" data-bet="50">Nu 50</button>
+          <button type="button" data-bet="100">Nu 100</button>
+          <button type="button" data-bet="500">Nu 500</button>
+        </div>
+        <button id="crossSound" class="icon-btn drop-sound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
+      </div>
+      <div class="cross-actions">
+        <button id="crossGo" class="primary drop-btn cross-go" type="button">GO</button>
+        <button id="crossCash" class="cross-cash" type="button" disabled>CASH OUT</button>
+      </div>
+      <p class="hint center">Hop road by road. Cash out any time, before a car gets you!</p>
+    </section>
+    <section class="side">
+      <h2>Prizes</h2>
+      <table class="pay" aria-label="Winnings by bet">
+        <thead id="crossPayHead"></thead>
+        <tbody id="crossPayBody"></tbody>
+      </table>
+      <p class="hint">Each road hides a prize (?). When the chicken lands safely, the prize is revealed, a barrier keeps it safe, and you can cash out or hop on. Bigger prizes are on busier roads.</p>
     </section>
   </section>
 
@@ -320,6 +359,7 @@
 <script src="chat-config.js"></script>
 <script src="game.js"></script>
 <script src="drop.js"></script>
+<script src="cross.js"></script>
 <script type="module" src="online.js"></script>
 </body>
 </html>
