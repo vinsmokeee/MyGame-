@@ -285,9 +285,9 @@ a.drawer-item { display: block; text-decoration: none; }
 .pf-stats dt { color: var(--muted); font-size: .75rem; }
 .pf-stats dd { margin: 2px 0 0; font-weight: 700; }
 
-/* ---------- lobby chat button (bottom left) ---------- */
+/* ---------- lobby chat button (bottom right) ---------- */
 .home-chat {
-  position: fixed; left: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;
+  position: fixed; right: 16px; bottom: 16px; z-index: 25; width: 58px; height: 58px; border-radius: 50%;
   border: 2px solid #f4d27c; cursor: pointer; font-size: 1.6rem; line-height: 1;
   background: radial-gradient(circle at 35% 30%, #fff1c4, #d4a63a 55%, #7a5612);
   box-shadow: 0 8px 22px rgba(0, 0, 0, .55);
