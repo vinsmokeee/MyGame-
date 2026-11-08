@@ -407,6 +407,45 @@
     pointer.classList.add('tick');
   }
   function chime(notes) { notes.forEach((f, i) => beep(f, i * 0.12, 0.35)); }
+  // A tone that slides from one pitch to another (clucks, horns, screeches).
+  function slide(f1, f2, start, dur, vol = 0.12, type = 'triangle') {
+    if (!soundOn || !audio) return;
+    const t = audio.currentTime + start;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.02, dur / 4));
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(audio.destination);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+  // Filtered noise (whooshes, crashes, clanks). sweep: [from, to] filter frequency in Hz.
+  function noise(start, dur, vol = 0.15, sweep = [800, 800], kind = 'bandpass') {
+    if (!soundOn || !audio) return;
+    const t = audio.currentTime + start;
+    const len = Math.max(1, Math.floor(audio.sampleRate * dur));
+    const buf = audio.createBuffer(1, len, audio.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = audio.createBufferSource();
+    src.buffer = buf;
+    const f = audio.createBiquadFilter();
+    f.type = kind;
+    f.frequency.setValueAtTime(sweep[0], t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(20, sweep[1]), t + dur);
+    f.Q.value = kind === 'bandpass' ? 1.2 : 0.7;
+    const g = audio.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.05, dur / 3));
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(f).connect(g).connect(audio.destination);
+    src.start(t);
+    src.stop(t + dur + 0.02);
+  }
 
   // ---------- confetti ----------
   const cv = $('confetti');
@@ -786,6 +825,8 @@
       start() { ensureAudio(); },
       beep(freq, start, dur, vol, type) { if (soundOn) beep(freq, start, dur, vol, type); },
       chime(notes) { if (soundOn) chime(notes); },
+      slide(f1, f2, start, dur, vol, type) { slide(f1, f2, start, dur, vol, type); },
+      noise(start, dur, vol, sweep, kind) { noise(start, dur, vol, sweep, kind); },
     },
     get bonusEvery() { return BONUS_EVERY; },
     // Short alert sound for the owner's notifications (works once sound has been allowed by a tap).

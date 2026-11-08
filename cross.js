@@ -66,6 +66,49 @@
     }
   })();
 
+  // ---------- sounds ----------
+  const sfx = {
+    cluck() { // chicken hop: two quick clucks
+      game.sound.slide(900, 520, 0, 0.07, 0.09, 'square');
+      game.sound.slide(1100, 640, 0.09, 0.06, 0.07, 'square');
+      game.sound.noise(0, 0.08, 0.03, [2500, 1800]);
+    },
+    clank() { // barrier drops
+      game.sound.noise(0, 0.12, 0.14, [3000, 900]);
+      game.sound.beep(220, 0, 0.1, 0.08, 'square');
+      game.sound.beep(440, 0.02, 0.08, 0.04, 'triangle');
+    },
+    reveal(m) { // prize revealed: brighter for bigger prizes
+      if (m >= 10) { game.sound.chime([523, 659, 784, 1047, 1319, 1568]); return; }
+      if (m >= 5) { game.sound.chime([523, 659, 784, 1047, 1319]); return; }
+      if (m >= 3) { game.sound.chime([659, 880, 1175]); return; }
+      if (m >= 2) { game.sound.chime([587, 880]); return; }
+      if (m >= 1) { game.sound.beep(523, 0.05, 0.2, 0.08); return; }
+      game.sound.slide(392, 330, 0.05, 0.25, 0.08, 'triangle'); // ×0.5
+    },
+    whoosh(vol) { // a car rushing past nearby
+      game.sound.noise(0, 0.45, vol, [300, 1600]);
+    },
+    horn() { // the car that comes for the chicken: horn + tyre screech
+      game.sound.beep(392, 0, 0.22, 0.09, 'sawtooth');
+      game.sound.beep(494, 0, 0.22, 0.07, 'sawtooth');
+      game.sound.noise(0.12, 0.35, 0.09, [4200, 2600]);
+    },
+    crash() {
+      game.sound.noise(0, 0.5, 0.28, [1800, 120], 'lowpass');
+      game.sound.slide(160, 45, 0, 0.35, 0.18, 'sawtooth');
+      game.sound.noise(0.08, 0.25, 0.08, [5000, 3000]); // glass
+      game.sound.slide(1400, 500, 0.3, 0.12, 0.06, 'square'); // a last squawk
+    },
+    coins(n) { // cash out: a jingle of coins
+      for (let k = 0; k < n; k++) {
+        const f = 1800 + Math.random() * 900;
+        game.sound.beep(f, k * 0.06, 0.12, 0.05, 'triangle');
+        game.sound.beep(f * 1.5, k * 0.06 + 0.01, 0.08, 0.03, 'sine');
+      }
+    },
+  };
+
   // ---------- round state ----------
   let round = null; // { bet, m, safe, at (road index, -1 = start), bonusDue, over }
   let roads = newRoads(); // shown before a round starts
@@ -122,7 +165,10 @@
     let text = payout > round.bet ? `🎉 Cashed out ${label(m)}: you won ${fmtNu(payout)}!` : `Cashed out ${label(m)}: ${fmtNu(payout)} back.`;
     if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
     say(text, payout > round.bet ? (m >= 5 ? 'jackpot' : 'win') : '');
-    if (!auto) game.celebrate(m >= 10 ? 'jackpot' : m >= 5 ? 'big' : payout > round.bet ? 'win' : 'bonus');
+    if (!auto) {
+      sfx.coins(payout > round.bet ? Math.min(12, 4 + Math.round(m * 1.5)) : 3);
+      if (m >= 5 || payout > round.bet) game.celebrate(m >= 10 ? 'jackpot' : m >= 5 ? 'big' : 'win');
+    }
     endRound();
   }
   $('crossCash').addEventListener('click', () => cashOut(false));
@@ -178,8 +224,7 @@
     const from = chicken.x;
     const to = colX(next);
     const t0 = performance.now();
-    game.sound.beep(660, 0, 0.06, 0.06, 'square');
-    game.sound.beep(990, 0.05, 0.06, 0.05, 'square');
+    sfx.cluck();
     chicken.hopFrom = from; chicken.hopTo = to; chicken.hopT0 = t0; chicken.hopping = true;
     if (!hit) {
       // clear the way on the road the chicken lands on safely
@@ -187,6 +232,7 @@
     } else {
       // a car comes all of a sudden down that road
       cars = cars.filter((c) => c.lane !== next || c.y > CY + 40);
+      setTimeout(() => sfx.horn(), 150);
       cars.push({ lane: next, y: -CAR_H - 10, speed: 0, killer: true, color: CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)], t0: t0 + 170 });
     }
     setTimeout(() => {
@@ -197,7 +243,8 @@
       if (!hit) {
         barriers.add(next);
         chicken.landT = performance.now();
-        game.sound.beep(180, 0, 0.08, 0.09, 'square');
+        sfx.clank();
+        sfx.reveal(round.m[next]);
         const m = round.m[next];
         const val = Math.floor(round.bet * m);
         if (next >= ROADS - 1) {
@@ -217,8 +264,7 @@
         chicken.deadT = performance.now();
         for (let k = 0; k < 14; k++) feathers.push({ x: chicken.x, y: CY - 10, vx: (rand() - 0.5) * 5, vy: -rand() * 4 - 1, r: rand() * 6, life: 1 });
         round.over = true;
-        game.sound.beep(440, 0, 0.12, 0.12, 'sawtooth');
-        game.sound.beep(330, 0.1, 0.18, 0.12, 'sawtooth');
+        sfx.crash();
         game.settle({ payout: 0, net: -round.bet, label: `Cross hit (road ${next + 1})`, bonusDue: round.bonusDue });
         let text = `💥 Hit by a car on road ${next + 1}! You lost ${fmtNu(round.bet)}.`;
         if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
@@ -478,6 +524,7 @@
 
   // ambient traffic: cars appear at random on roads without a barrier
   let lastSpawn = 0;
+  let lastWhoosh = 0;
   function stepCars(now) {
     if (now - lastSpawn > 380 + rand() * 650) {
       lastSpawn = now;
@@ -493,8 +540,14 @@
     for (const c of cars) {
       if (c.killer) { if (now >= c.t0) c.y = -CAR_H - 10 + (now - c.t0) * 0.95; continue; } // races down through the chicken
       const stop = BARRIER_Y - CAR_H - 6; // cars stop at a barrier (if they have not passed it yet)
+      const before = c.y;
       if (barriers.has(c.lane) && c.y <= stop) c.y = Math.min(stop, c.y + c.speed);
       else c.y += c.speed;
+      // whoosh when a car rushes past right next to the chicken (not too often)
+      if (before + CAR_H < CY && c.y + CAR_H >= CY && Math.abs(c.lane - chicken.road) <= 1 && now - lastWhoosh > 350) {
+        lastWhoosh = now;
+        sfx.whoosh(c.lane === chicken.road + 1 ? 0.07 : 0.04);
+      }
     }
     cars = cars.filter((c) => c.y < H + 20);
   }
