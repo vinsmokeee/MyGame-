@@ -25,6 +25,18 @@
   .item .who { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .meta { color: var(--muted); font-size: .8rem; white-space: nowrap; }
   .idtag { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .06em; background: var(--panel); border: 1px solid var(--border); color: var(--accent); border-radius: 6px; padding: 1px 6px; font-size: .85rem; margin-right: 6px; }
+  .new-players { background: var(--bg); border: 1px solid #b8862a; border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  .np-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  .np-today { color: #f4d27c; font-size: .85rem; font-weight: 700; }
+  .np-list { list-style: none; margin: 0; padding: 0; }
+  .np-list li button { width: 100%; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; text-align: left;
+    background: none; border: 0; border-top: 1px solid var(--line); color: var(--text); font: inherit; padding: 8px 2px; cursor: pointer; }
+  .np-list li:first-child button { border-top: 0; }
+  .np-list .np-who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .np-list .np-id { color: #f4d27c; font-family: ui-monospace, Menlo, monospace; font-size: .8rem; margin-right: 6px; }
+  .np-list .np-meta { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  .np-list .np-twin { color: #fca5a5; }
+  .np-empty { color: var(--muted); font-size: .85rem; padding: 4px 2px; }
   .item .twin { color: #fca5a5; font-size: .82rem; margin-top: 2px; }
   .item .twin:empty { display: none; }
   .item .sub { color: var(--muted); font-size: .85rem; margin-top: 2px; line-height: 1.4; }
@@ -74,6 +86,10 @@
     </div>
 
     <div id="playersView">
+      <section class="new-players">
+        <div class="np-head"><strong>🆕 New players</strong><span id="npToday" class="np-today"></span></div>
+        <ul id="npList" class="np-list"></ul>
+      </section>
       <input id="search" class="search" type="search" placeholder="Search by name, username or ID" aria-label="Search players">
       <ul id="playerList" class="items"></ul>
     </div>

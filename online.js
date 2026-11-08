@@ -186,6 +186,7 @@ async function start() {
     showPlayerCount();
     if (mode === 'created') countNewPlayer();
     if (mode === 'created') game.showWelcome(extra.gift === false);
+    if (mode === 'created') joinedPending = true; // the first save records when the account was created
     idReady.finally(saveNow);
   }
 
@@ -208,10 +209,14 @@ async function start() {
 
   // ---------- saving progress to the account ----------
   let saveTimer = null;
+  let joinedPending = false;
   function saveNow() {
     clearTimeout(saveTimer);
     if (!uid || !entered) return Promise.resolve();
-    return fb.setDoc(playerRef(), { ...game.exportState(), updatedAt: fb.serverTimestamp() }, { merge: true })
+    const data = { ...game.exportState(), updatedAt: fb.serverTimestamp() };
+    if (joinedPending) data.joinedAt = fb.serverTimestamp(); // for the owner's "New players" list
+    return fb.setDoc(playerRef(), data, { merge: true })
+      .then(() => { if (data.joinedAt) joinedPending = false; })
       .catch(() => {});
   }
   function saveSoon() {

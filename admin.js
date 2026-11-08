@@ -64,7 +64,10 @@ async function start() {
         players = new Map(snap.docs.map((d) => [d.id, { uid: d.id, ...d.data({ serverTimestamps: 'estimate' }) }]));
         // Keep the public player count in step with the real number of accounts.
         // (Only while the list holds every account; it shows up to 500.)
-        if (players.size < 500) fb.setDoc(fb.doc(db, 'stats', 'players'), { count: players.size }, { merge: true }).catch(() => {});
+        if (players.size < 500 && players.size !== lastCount) {
+          lastCount = players.size;
+          fb.setDoc(fb.doc(db, 'stats', 'players'), { count: players.size }, { merge: true }).catch(() => {});
+        }
         renderPlayers();
         renderIndex();
         if (current) renderThreadHead();
@@ -118,7 +121,49 @@ async function start() {
   $('search').addEventListener('input', renderPlayers);
   // Rows are kept and updated in place, so typed amounts and "Sent" messages survive live updates.
   const rows = new Map(); // uid -> li
+  let lastCount = -1; // last player count written to stats/players
+
+  // 🆕 New players: accounts by join time (newest first), with how many joined today.
+  const NEW_LIST_MAX = 10;
+  function joinedMs(p) { return p.joinedAt && p.joinedAt.toDate ? p.joinedAt.toDate().getTime() : 0; }
+  function renderNewPlayers() {
+    const joined = [...players.values()].filter((p) => joinedMs(p)).sort((a, b) => joinedMs(b) - joinedMs(a));
+    const today = new Date().toDateString();
+    const todayCount = joined.filter((p) => new Date(joinedMs(p)).toDateString() === today).length;
+    $('npToday').textContent = `${todayCount} joined today`;
+    const ul = $('npList');
+    ul.replaceChildren();
+    if (!joined.length) {
+      const li = document.createElement('li');
+      li.className = 'np-empty';
+      li.textContent = 'New sign-ups will appear here.';
+      ul.append(li);
+      return;
+    }
+    for (const p of joined.slice(0, NEW_LIST_MAX)) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      const who = document.createElement('span');
+      who.className = 'np-who';
+      const id = document.createElement('span');
+      id.className = 'np-id';
+      id.textContent = p.playerId || '?';
+      const twin = p.deviceId && [...players.values()].some((o) => o.uid !== p.uid && o.deviceId === p.deviceId);
+      who.append(id, `${p.name || p.username || 'Player'}${p.gender ? ` · ${p.gender}` : ''}`);
+      if (twin) { const t = document.createElement('span'); t.className = 'np-twin'; t.textContent = ' · ⚠ same phone'; who.append(t); }
+      const meta = document.createElement('span');
+      meta.className = 'np-meta';
+      meta.textContent = `${fmtTime(p.joinedAt)} · ${fmtNu(p.nu || 0)}`;
+      b.append(who, meta);
+      b.addEventListener('click', () => { showTab('inbox'); openThread(p.uid); });
+      li.append(b);
+      ul.append(li);
+    }
+  }
+
   function renderPlayers() {
+    renderNewPlayers();
     const q = $('search').value.trim().toLowerCase();
     const ul = $('playerList');
     const shown = [...players.values()].filter((p) => !q
