@@ -7,7 +7,7 @@
 
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
-  const MINES = 5; // every round hides 5 mines
+  const MINES = 6; // every round hides 6 mines
   const MIN_GEMS_TO_CASH = 5; // cash out unlocks after 5 gems
   const TILES = 25;
   const RTP = 0.88; // share of bets paid back over time, whatever the player does (simulated: ~87–88%)
@@ -23,7 +23,7 @@
     if (gems <= 0) return 0;
     return Math.floor(RTP * choose(TILES, gems) / choose(TILES - mines, gems) * 100) / 100;
   }
-  const payoutFor = (bet, mines, gems) => Math.min(MAX_WIN, Math.floor(bet * mult(mines, gems)));
+  const payoutFor = (bet, mines, gems) => Math.min(MAX_WIN, Math.floor(bet * Math.round(mult(mines, gems) * 100) / 100 + 1e-9));
 
   function randInt(n) {
     const a = new Uint32Array(1);
@@ -42,7 +42,7 @@
     title: '💎 SOMA Mines',
     help: [
       'Pick your bet and tap any tile.',
-      'Find 💎 gems: every gem raises your prize. 5 tiles hide 💣 mines.',
+      'Find 💎 gems: every gem raises your prize. 6 tiles hide 💣 mines.',
       'Hit a 💣 and you lose your bet.',
       'Cash out from 5 gems, before you hit a mine!',
       'Prizes below: after 5, 8 and 10 gems.',
