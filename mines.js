@@ -92,6 +92,28 @@
     },
   };
 
+  // ---------- art (drawn in the casino style) ----------
+  const GEM_SVG = `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <defs>
+      <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e0f7ff"/><stop offset=".5" stop-color="#7dd3fc"/><stop offset="1" stop-color="#1e3a8a"/></linearGradient>
+      <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe7a8"/><stop offset="1" stop-color="#8a6414"/></linearGradient>
+    </defs>
+    <polygon points="14,22 24,10 40,10 50,22 32,54" fill="url(#gA)" stroke="url(#gB)" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="14,22 50,22 32,54" fill="#38bdf8" opacity=".55"/>
+    <polygon points="24,10 32,22 40,10" fill="#f0f9ff" opacity=".85"/>
+    <polyline points="14,22 24,10 32,22 40,10 50,22" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.2"/>
+    <line x1="32" y1="22" x2="32" y2="54" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>
+    <circle cx="22" cy="18" r="2.2" fill="#fff"/>
+  </svg>`;
+  const BOMB_SVG = (lit) => `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <defs><radialGradient id="bm" cx=".35" cy=".35" r=".7"><stop offset="0" stop-color="#6b7280"/><stop offset=".5" stop-color="#1f2937"/><stop offset="1" stop-color="#030712"/></radialGradient></defs>
+    <circle cx="30" cy="38" r="18" fill="url(#bm)" stroke="#d4a63a" stroke-width="2"/>
+    <rect x="36" y="16" width="9" height="8" rx="2" transform="rotate(35 40 20)" fill="#9ca3af" stroke="#d4a63a" stroke-width="1.5"/>
+    <path d="M44 16 q6 -6 10 -2" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linecap="round"/>
+    ${lit ? '<circle cx="54" cy="14" r="5" fill="#fbbf24"/><circle cx="54" cy="14" r="2.5" fill="#fff7cc"/>' : ''}
+    <circle cx="23" cy="31" r="4" fill="#fff" opacity=".25"/>
+  </svg>`;
+
   // ---------- board ----------
   const grid = $('minesGrid');
   const tiles = [];
@@ -105,7 +127,43 @@
     tiles.push(b);
   }
   function resetBoard() {
-    for (const t of tiles) { t.className = 'mine-tile'; t.textContent = ''; t.disabled = false; }
+    for (const t of tiles) { t.className = 'mine-tile'; t.innerHTML = ''; t.disabled = false; }
+  }
+  function sparks(tile, n, color) {
+    for (let k = 0; k < n; k++) {
+      const sp = document.createElement('span');
+      sp.className = 'spark';
+      const a = Math.random() * Math.PI * 2;
+      const d = 24 + Math.random() * 30;
+      sp.style.left = '50%'; sp.style.top = '50%';
+      sp.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+      sp.style.setProperty('--dy', `${Math.sin(a) * d}px`);
+      if (color) sp.style.background = color;
+      tile.append(sp);
+      setTimeout(() => sp.remove(), 650);
+    }
+  }
+
+  // prize ladder above the board: the next multipliers, with the current one lit
+  function renderLadder() {
+    const playing = round && !round.over;
+    const m = playing ? round.mines : mines;
+    const g = playing ? round.gems : 0;
+    const b = playing ? round.bet : bet;
+    const max = TILES - m;
+    const from = Math.max(1, g - 1);
+    const to = Math.min(max, from + 9);
+    const box = $('minesLadder');
+    box.replaceChildren();
+    for (let k = from; k <= to; k++) {
+      const st = document.createElement('div');
+      st.className = 'ladder-step' + (k < g ? ' done' : k === g ? ' now' : k === g + 1 ? ' next' : '');
+      st.innerHTML = `${fmtX(mult(m, k))}<small>${k} 💎 · ${fmtNu(payoutFor(b, m, k)).replace('Nu ', 'Nu\u00a0')}</small>`;
+      box.append(st);
+    }
+    const now = box.querySelector('.now') || box.querySelector('.next');
+    if (now) box.scrollLeft = Math.max(0, now.offsetLeft - box.clientWidth / 2 + now.clientWidth / 2);
+    $('minesGems').textContent = `💎 ${g} / ${max}`;
   }
 
   const msgEl = $('minesMessage');
@@ -123,6 +181,9 @@
     $('minesCash').disabled = !canCash;
     $('minesCash').textContent = canCash ? `CASH OUT ${fmtNu(payoutFor(b, m, g))}` : 'CASH OUT';
     document.querySelectorAll('#minesBets button, #minesCount button').forEach((x) => { x.disabled = !!playing; });
+    $('minesCash').classList.toggle('pulse', !!(canCash && payoutFor(b, m, g) > b));
+    $('minesRandom').disabled = !!(round && round.over);
+    renderLadder();
   }
 
   document.querySelectorAll('#minesBets button').forEach((b) => {
@@ -166,8 +227,12 @@
     if (tiles[i].disabled) return;
     tiles[i].disabled = true;
     if (round.mineSet.has(i)) {
-      tiles[i].classList.add('boom');
-      tiles[i].textContent = '💥';
+      tiles[i].classList.add('boom', 'flip');
+      tiles[i].innerHTML = BOMB_SVG(true);
+      sparks(tiles[i], 14, '#f97316');
+      const board = document.querySelector('.mines-board');
+      board.classList.remove('shake'); void board.offsetWidth; board.classList.add('shake');
+      $('minesFlash').classList.remove('on'); void $('minesFlash').offsetWidth; $('minesFlash').classList.add('on');
       sfx.boom();
       if (window.SomaHaptic) window.SomaHaptic('lose');
       finish(0);
@@ -178,7 +243,8 @@
     }
     round.gems += 1;
     tiles[i].classList.add('gem');
-    tiles[i].textContent = '💎';
+    tiles[i].innerHTML = GEM_SVG;
+    sparks(tiles[i], 6, '#fbe7a8');
     sfx.gem(round.gems);
     if (round.gems === TILES - round.mines) { // every gem found
       cashOut(true);
@@ -192,10 +258,13 @@
   function finish(payout) {
     round.over = true;
     // show where everything was
+    const mineSet = round.mineSet;
     tiles.forEach((t, i) => {
       t.disabled = true;
       if (t.classList.contains('gem') || t.classList.contains('boom')) return;
-      if (round.mineSet.has(i)) { t.classList.add('shown-mine'); t.textContent = '💣'; } else { t.classList.add('shown-gem'); t.textContent = '💎'; }
+      setTimeout(() => { // a wave across the board
+        if (mineSet.has(i)) { t.classList.add('shown-mine', 'flip'); t.innerHTML = BOMB_SVG(false); } else { t.classList.add('shown-gem', 'flip'); t.innerHTML = GEM_SVG; }
+      }, 40 * ((i % 5) + Math.floor(i / 5)));
     });
     const m = mult(round.mines, round.gems);
     game.settle({
@@ -210,7 +279,7 @@
       round = null;
       resetBoard();
       updateInfo();
-    }, 2200);
+    }, 2600);
   }
 
   function cashOut(all) {
@@ -227,6 +296,11 @@
     if (payout > round.bet) game.celebrate(m >= 10 ? 'jackpot' : m >= 3 ? 'big' : 'win');
   }
   $('minesCash').addEventListener('click', () => cashOut(false));
+  $('minesRandom').addEventListener('click', () => {
+    if (round && round.over) return;
+    const closed = tiles.map((t, i) => (t.disabled ? -1 : i)).filter((i) => i >= 0);
+    if (closed.length) pick(closed[randInt(closed.length)]);
+  });
   // Leaving the page mid-round with gems found cashes out for the player.
   window.addEventListener('pagehide', () => { if (round && !round.over && round.gems > 0) cashOut(false); });
 

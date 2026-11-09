@@ -130,7 +130,15 @@
         <span>Next gem: <strong id="minesNext">×1.00</strong></span>
         <span>Now: <strong id="minesNow">—</strong></span>
       </div>
-      <div class="board mines-board"><div id="minesGrid" class="mines-grid" role="grid" aria-label="SOMA Mines board"></div></div>
+      <div id="minesLadder" class="mines-ladder" aria-label="Prize ladder"></div>
+      <div class="board mines-board">
+        <div id="minesGrid" class="mines-grid" role="grid" aria-label="SOMA Mines board"></div>
+        <div id="minesFlash" class="mines-flash" aria-hidden="true"></div>
+      </div>
+      <div class="mines-bar">
+        <span id="minesGems" class="mines-gems">💎 0 / 22</span>
+        <button id="minesRandom" class="secondary small" type="button">🎲 Random tile</button>
+      </div>
       <p id="minesMessage" class="message" role="status" aria-live="polite">Pick your bet and mines, then tap any tile to start.</p>
       <div class="drop-controls">
         <div id="minesBets" class="bets" role="group" aria-label="Bet">
