@@ -60,7 +60,7 @@
         <span class="game-art" aria-hidden="true">💎</span>
         <span class="game-info">
           <strong>SOMA Mines</strong>
-          <span>Find the gems, dodge the mines. You choose the risk!</span>
+          <span>Find the gems, dodge the mines. Cash out before BOOM!</span>
         </span>
         <span class="game-play">Play</span>
       </a>
@@ -116,30 +116,15 @@
   <section id="view-mines" class="view mines-view" data-title="SOMA Mines" hidden>
     <a class="back-link" href="#">← All games</a>
     <section class="stage">
-      <div class="mines-pick">
-        <div class="mines-pick-title">💣 How many mines?</div>
-        <div id="minesCount" class="bets mines-count" role="group" aria-label="Number of mines">
-          <button type="button" data-mines="1">1</button>
-          <button type="button" data-mines="3" class="on">3</button>
-          <button type="button" data-mines="5">5</button>
-          <button type="button" data-mines="10">10</button>
-        </div>
-        <div class="mines-pick-hint">More mines = bigger prizes, but more danger!</div>
-      </div>
-      <div class="mines-info">
-        <span>Next gem: <strong id="minesNext">×1.00</strong></span>
-        <span>Now: <strong id="minesNow">—</strong></span>
-      </div>
-      <div id="minesLadder" class="mines-ladder" aria-label="Prize ladder"></div>
       <div class="board mines-board">
         <div id="minesGrid" class="mines-grid" role="grid" aria-label="SOMA Mines board"></div>
         <div id="minesFlash" class="mines-flash" aria-hidden="true"></div>
       </div>
       <div class="mines-bar">
-        <span id="minesGems" class="mines-gems">💎 0 / 22</span>
+        <span id="minesGems" class="mines-gems">💎 0 / 20 · 💣 5</span>
         <button id="minesRandom" class="secondary small" type="button">🎲 Random tile</button>
       </div>
-      <p id="minesMessage" class="message" role="status" aria-live="polite">Pick your bet and mines, then tap any tile to start.</p>
+      <p id="minesMessage" class="message" role="status" aria-live="polite">Pick a bet, then tap any tile to start.</p>
       <div class="drop-controls">
         <div id="minesBets" class="bets" role="group" aria-label="Bet">
           <button type="button" data-bet="20" class="on">Nu 20</button>
@@ -156,12 +141,12 @@
     <section class="side">
       <h2>How to play</h2>
       <ol class="mines-how">
-        <li>Pick your <strong>bet</strong>.</li>
-        <li>Choose <strong>how many mines</strong> (1, 3, 5 or 10). More mines = bigger prizes.</li>
-        <li><strong>Tap tiles</strong> to find 💎 gems. Each gem raises your prize.</li>
-        <li><strong>Cash out</strong> any time, before you hit a 💣 mine!</li>
+        <li><strong>Tap tiles</strong> to find 💎 gems. 5 tiles hide 💣 mines.</li>
+        <li>Every gem <strong>raises your prize</strong>.</li>
+        <li>Hit a 💣 and you lose your bet.</li>
+        <li><strong>Cash out</strong> from 2 gems, before you hit a mine!</li>
       </ol>
-      <h2>Prizes (×bet)</h2>
+      <h2>Prizes</h2>
       <table class="pay" aria-label="Prizes by gems found">
         <thead id="minesPayHead"></thead>
         <tbody id="minesPayBody"></tbody>

@@ -1,6 +1,5 @@
-// SOMA Mines: a 5×5 board hides 💎 gems and 💣 mines. The player picks the bet and how many mines
-// (1, 3, 5 or 10), then taps tiles. Each gem raises the prize; a mine ends the round. Cash out any
-// time. Uses the shared SOMA account and Nu balance (window.LuckySpin).
+// SOMA Mines: a 5×5 board hides 20 💎 gems and 5 💣 mines. Pick a bet and tap tiles: each gem raises the
+// prize, a mine loses the bet. Cash out from 2 gems. Uses the shared SOMA account and Nu balance.
 (() => {
   'use strict';
   const game = window.LuckySpin;
@@ -8,7 +7,8 @@
 
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
-  const MINE_CHOICES = [1, 3, 5, 10];
+  const MINES = 5; // every round hides 5 mines
+  const MIN_GEMS_TO_CASH = 2; // cash out unlocks after 2 gems
   const TILES = 25;
   const RTP = 0.88; // share of bets paid back over time, whatever the player does (simulated: ~87–88%)
   const MAX_WIN = 250000; // biggest prize, same as the SOMA Spin jackpot
@@ -32,7 +32,7 @@
   }
 
   let bet = BETS[0];
-  let mines = 3;
+  const mines = MINES;
   let round = null; // { bet, mines, mineSet, gems, over, bonusDue }
 
   // ---------- prize table + first-time note ----------
@@ -41,31 +41,31 @@
     id: 'mines',
     title: '💎 SOMA Mines',
     help: [
-      'Pick your bet.',
-      'Choose how many mines are hidden: 1, 3, 5 or 10. More mines = bigger prizes, but more danger!',
-      'Tap tiles to find 💎 gems. Every gem raises your prize.',
-      'Cash out any time, before you hit a 💣 mine!',
-      'Example prizes below: 3 mines, after finding 3, 5 and 8 gems.',
+      'Pick your bet and tap any tile.',
+      'Find 💎 gems: every gem raises your prize. 5 tiles hide 💣 mines.',
+      'Hit a 💣 and you lose your bet.',
+      'Cash out from 2 gems, before you hit a mine!',
+      'Prizes below: after 3, 5 and 8 gems.',
     ],
-    // with 3 mines: prize after 3, 5 and 8 gems
-    prizes: (b) => [3, 5, 8].map((g) => payoutFor(b, 3, g)),
+    prizes: (b) => [3, 5, 8].map((g) => payoutFor(b, MINES, g)),
   });
 
+  // simple prize table: gems found -> prize for each bet
   function buildPayTable() {
-    const gemsCols = [1, 2, 3, 5, 8];
+    const gemsRows = [2, 3, 4, 5, 6, 8, 10];
     const head = $('minesPayHead');
     const body = $('minesPayBody');
     head.replaceChildren();
     body.replaceChildren();
     const tr = document.createElement('tr');
-    for (const t of ['Mines', ...gemsCols.map((g) => `${g} 💎`)]) { const th = document.createElement('th'); th.textContent = t; tr.append(th); }
+    for (const t of ['💎', ...BETS.map((b) => `Nu ${b}`)]) { const th = document.createElement('th'); th.textContent = t; tr.append(th); }
     head.append(tr);
-    for (const m of MINE_CHOICES) {
+    for (const g of gemsRows) {
       const row = document.createElement('tr');
       const first = document.createElement('td');
-      first.textContent = `${m} 💣`;
+      first.textContent = String(g);
       row.append(first);
-      for (const g of gemsCols) { const td = document.createElement('td'); td.textContent = g <= TILES - m ? fmtX(mult(m, g)) : '—'; if (m === mines) td.className = 'jp'; row.append(td); }
+      for (const b of BETS) { const td = document.createElement('td'); td.textContent = payoutFor(b, MINES, g).toLocaleString('en-US'); if (g >= 8) td.className = 'jp'; row.append(td); }
       body.append(row);
     }
   }
@@ -144,28 +144,6 @@
     }
   }
 
-  // prize ladder above the board: the next multipliers, with the current one lit
-  function renderLadder() {
-    const playing = round && !round.over;
-    const m = playing ? round.mines : mines;
-    const g = playing ? round.gems : 0;
-    const b = playing ? round.bet : bet;
-    const max = TILES - m;
-    const from = Math.max(1, g - 1);
-    const to = Math.min(max, from + 9);
-    const box = $('minesLadder');
-    box.replaceChildren();
-    for (let k = from; k <= to; k++) {
-      const st = document.createElement('div');
-      st.className = 'ladder-step' + (k < g ? ' done' : k === g ? ' now' : k === g + 1 ? ' next' : '');
-      st.innerHTML = `${fmtX(mult(m, k))}<small>${k} 💎 · ${fmtNu(payoutFor(b, m, k)).replace('Nu ', 'Nu\u00a0')}</small>`;
-      box.append(st);
-    }
-    const now = box.querySelector('.now') || box.querySelector('.next');
-    if (now) box.scrollLeft = Math.max(0, now.offsetLeft - box.clientWidth / 2 + now.clientWidth / 2);
-    $('minesGems').textContent = `💎 ${g} / ${max}`;
-  }
-
   const msgEl = $('minesMessage');
   const say = (text, cls = '') => { msgEl.textContent = text; msgEl.className = 'message' + (cls ? ' ' + cls : ''); };
 
@@ -174,16 +152,15 @@
     const m = playing ? round.mines : mines;
     const g = playing ? round.gems : 0;
     const b = playing ? round.bet : bet;
-    const next = g < TILES - m ? mult(m, g + 1) : 0;
-    $('minesNext').textContent = next ? `${fmtX(next)} → ${fmtNu(Math.min(MAX_WIN, b * next))}` : '—';
-    $('minesNow').textContent = playing && g > 0 ? `${fmtX(mult(m, g))} = ${fmtNu(payoutFor(b, m, g))}` : '—';
-    const canCash = playing && g > 0;
+    // the prize is shown in one place: the CASH OUT button
+    const canCash = playing && g >= MIN_GEMS_TO_CASH;
     $('minesCash').disabled = !canCash;
-    $('minesCash').textContent = canCash ? `CASH OUT ${fmtNu(payoutFor(b, m, g))}` : 'CASH OUT';
-    document.querySelectorAll('#minesBets button, #minesCount button').forEach((x) => { x.disabled = !!playing; });
+    $('minesCash').textContent = canCash ? `CASH OUT ${fmtNu(payoutFor(b, m, g))}`
+      : playing ? `CASH OUT (find ${MIN_GEMS_TO_CASH - g} more 💎)` : 'CASH OUT';
+    document.querySelectorAll('#minesBets button').forEach((x) => { x.disabled = !!playing; });
     $('minesCash').classList.toggle('pulse', !!(canCash && payoutFor(b, m, g) > b));
     $('minesRandom').disabled = !!(round && round.over);
-    renderLadder();
+    $('minesGems').textContent = `💎 ${g} / ${TILES - m} · 💣 ${m}`;
   }
 
   document.querySelectorAll('#minesBets button').forEach((b) => {
@@ -191,21 +168,10 @@
       if (round && !round.over) return;
       document.querySelectorAll('#minesBets button').forEach((x) => x.classList.toggle('on', x === b));
       bet = Number(b.dataset.bet);
-      say(`Bet ${fmtNu(bet)} with ${mines} mine${mines === 1 ? '' : 's'}. Tap any tile to start.`);
+      say(`Bet ${fmtNu(bet)}. Tap any tile to start.`);
       updateInfo();
     });
   });
-  document.querySelectorAll('#minesCount button').forEach((b) => {
-    b.addEventListener('click', () => {
-      if (round && !round.over) return;
-      document.querySelectorAll('#minesCount button').forEach((x) => x.classList.toggle('on', x === b));
-      mines = Number(b.dataset.mines);
-      say(`${mines} mine${mines === 1 ? '' : 's'} hidden. ${mines >= 5 ? 'Big prizes, big danger!' : mines === 1 ? 'Safer, smaller prizes.' : 'Tap any tile to start.'}`);
-      buildPayTable();
-      updateInfo();
-    });
-  });
-
   function startRound() {
     const paid = game.spend(bet, 'mines');
     if (!paid.ok) {
@@ -251,7 +217,8 @@
       return;
     }
     const now = payoutFor(round.bet, round.mines, round.gems);
-    say(`💎 Gem ${round.gems}! Prize ${fmtX(mult(round.mines, round.gems))} = ${fmtNu(now)}. Cash out or keep going?`, now > round.bet ? 'win' : '');
+    if (round.gems < MIN_GEMS_TO_CASH) say(`💎 Gem ${round.gems}! Find ${MIN_GEMS_TO_CASH - round.gems} more to unlock CASH OUT.`, '');
+    else say(`💎 Gem ${round.gems}! Cash out ${fmtNu(now)} or keep going?`, now > round.bet ? 'win' : '');
     updateInfo();
   }
 
@@ -283,7 +250,7 @@
   }
 
   function cashOut(all) {
-    if (!round || round.over || round.gems === 0) return;
+    if (!round || round.over || round.gems < MIN_GEMS_TO_CASH) return;
     const payout = payoutFor(round.bet, round.mines, round.gems);
     const m = mult(round.mines, round.gems);
     finish(payout);
@@ -302,7 +269,7 @@
     if (closed.length) pick(closed[randInt(closed.length)]);
   });
   // Leaving the page mid-round with gems found cashes out for the player.
-  window.addEventListener('pagehide', () => { if (round && !round.over && round.gems > 0) cashOut(false); });
+  window.addEventListener('pagehide', () => { if (round && !round.over && round.gems >= MIN_GEMS_TO_CASH) cashOut(false); });
 
   buildPayTable();
   updateInfo();
