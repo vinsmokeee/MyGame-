@@ -7,7 +7,7 @@
 
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
-  const MINES = 6; // every round hides 6 mines
+  const MINES = 8; // every round hides 8 mines
   const MIN_GEMS_TO_CASH = 5; // cash out unlocks after 5 gems
   const TILES = 25;
   const RTP = 0.88; // share of bets paid back over time, whatever the player does (simulated: ~87–88%)
@@ -42,7 +42,7 @@
     title: '💎 SOMA Mines',
     help: [
       'Pick your bet and tap any tile.',
-      'Find 💎 gems: every gem raises your prize. 6 tiles hide 💣 mines.',
+      'Find 💎 gems: every gem raises your prize. 8 tiles hide 💣 mines.',
       'Hit a 💣 and you lose your bet.',
       'Cash out from 5 gems, before you hit a mine!',
       'Prizes below: after 5, 8 and 10 gems.',
@@ -52,7 +52,7 @@
 
   // simple prize table: gems found -> prize for each bet
   function buildPayTable() {
-    const gemsRows = [5, 6, 7, 8, 10, 12];
+    const gemsRows = [5, 6, 7, 8, 9, 10];
     const head = $('minesPayHead');
     const body = $('minesPayBody');
     head.replaceChildren();
