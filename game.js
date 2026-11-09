@@ -578,6 +578,12 @@
         li.append(b, ` = Prize ${g.prizes(bet).map((n) => fmtNu(n).replace(' ', '\u00a0')).join(', ')}`);
         list.append(li);
       }
+      if (onlyId && g.help) {
+        const how = document.createElement('ol');
+        how.className = 'mines-how';
+        for (const line of g.help) { const li = document.createElement('li'); li.textContent = line; how.append(li); }
+        box.append(how);
+      }
       if (onlyId) box.append(list); // the pop-up title already names the game
       else box.append(h, list);
     }
@@ -673,6 +679,8 @@
     soundOn = on;
     $('sound').textContent = soundOn ? '🔊' : '🔇';
     $('sound').setAttribute('aria-pressed', String(soundOn));
+    const mn = $('minesSound');
+    if (mn) { mn.textContent = soundOn ? '🔊' : '🔇'; mn.setAttribute('aria-pressed', String(soundOn)); }
     const c = $('crossSound');
     if (c) { c.textContent = soundOn ? '🔊' : '🔇'; c.setAttribute('aria-pressed', String(soundOn)); }
     const d = $('dropSound');
@@ -680,6 +688,7 @@
   }
   $('sound').addEventListener('click', () => setSound(!soundOn));
   if ($('crossSound')) $('crossSound').addEventListener('click', () => setSound(!soundOn));
+  if ($('minesSound')) $('minesSound').addEventListener('click', () => setSound(!soundOn));
   // SOMA Spin bet buttons: pick the bet in the (hidden) list and update everything as before.
   document.querySelectorAll('#spinBets button').forEach((b) => {
     b.addEventListener('click', () => {
@@ -707,7 +716,7 @@
 
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   // Fields saved to the player's online account (so they can log in on any phone).
-  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'crosses', 'history', 'grants', 'prizeNoteSeen', 'deviceId'];
+  const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'crosses', 'minesPlayed', 'history', 'grants', 'prizeNoteSeen', 'deviceId'];
   // A hidden ID for this phone/browser (kept after log out), used to give the welcome gift once per phone.
   function deviceId() {
     let id = null;
@@ -728,7 +737,7 @@
   // ---------- lobby and games (one page: #spin, #drop, or the lobby) ----------
   let currentView = 'home';
   function showView() {
-    const name = { '#spin': 'spin', '#drop': 'drop', '#cross': 'cross' }[location.hash] || 'home';
+    const name = { '#spin': 'spin', '#drop': 'drop', '#cross': 'cross', '#mines': 'mines' }[location.hash] || 'home';
     currentView = name;
     document.querySelectorAll('.view').forEach((v) => { v.hidden = v.id !== `view-${name}`; });
     const view = $(`view-${name}`);
@@ -797,6 +806,7 @@
       state.nu -= amount;
       if (game === 'drop') state.drops = (state.drops || 0) + 1;
       if (game === 'cross') state.crosses = (state.crosses || 0) + 1;
+      if (game === 'mines') state.minesPlayed = (state.minesPlayed || 0) + 1;
       const bonusDue = countPlay();
       save();
       render();

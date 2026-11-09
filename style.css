@@ -32,7 +32,7 @@ body {
   gap: 14px;
 }
 /* Each game view: the board/wheel next to its prize panel (stacked on phones). */
-.view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]) {
+.view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]), .view.mines-view:not([hidden]) {
   display: grid; grid-template-columns: 1fr 280px; grid-template-areas: "back back" "stage side"; gap: 14px 20px;
 }
 .back-link { grid-area: back; color: var(--muted); text-decoration: none; font-weight: 600; justify-self: start; }
@@ -50,6 +50,33 @@ body[data-view="home"] .play-only { display: none; }
 }
 a.game-card:hover { transform: translateY(-2px); border-color: #f4d27c; }
 .spin-card { background: radial-gradient(circle at 15% 50%, #9e1d33 0%, #3a0b14 55%, #15171e 100%); }
+.mines-card { background: radial-gradient(circle at 15% 50%, #7c3aed 0%, #2e1065 55%, #15171e 100%); }
+/* ---------- SOMA Mines ---------- */
+.mines-pick { width: min(100%, 440px); background: var(--panel); border: 1px solid #b8862a; border-radius: 14px; padding: 10px 12px; text-align: center; }
+.mines-pick-title { font-weight: 900; color: #f4d27c; margin-bottom: 8px; font-size: 1.05rem; }
+.mines-count button { font-size: 1.05rem; font-weight: 900; }
+.mines-count button.on { background: linear-gradient(180deg, #c0263f, #7a1426); color: #fbe7a8; border-color: #d4a63a; }
+.mines-count button:disabled, #minesBets button:disabled { opacity: .55; }
+.mines-pick-hint { color: var(--muted); font-size: .82rem; margin-top: 6px; }
+.mines-info { width: min(100%, 440px); display: flex; justify-content: space-between; color: var(--muted); font-size: .95rem; }
+.mines-info strong { color: #f4d27c; }
+.mines-board { padding: 10px; }
+.mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.mine-tile {
+  aspect-ratio: 1; border-radius: 10px; border: 1px solid rgba(232, 196, 106, .55); cursor: pointer; font-size: 1.6rem; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #2f3240, #15171e 70%); box-shadow: inset 0 -3px 6px rgba(0,0,0,.5), 0 3px 8px rgba(0,0,0,.4);
+  display: grid; place-items: center; transition: transform .12s; color: inherit; padding: 0;
+}
+.mine-tile:hover:not(:disabled) { transform: translateY(-2px); border-color: #f4d27c; }
+.mine-tile:disabled { cursor: default; }
+.mine-tile.gem { background: radial-gradient(circle at 35% 30%, #fff1c4, #d4a63a 55%, #7a5612); border-color: #fbe7a8; animation: pop .25s ease-out; }
+.mine-tile.boom { background: radial-gradient(circle at 50% 50%, #f87171, #9e1d33 60%, #3a0b14); border-color: #fca5a5; animation: shake .35s; }
+.mine-tile.shown-mine { background: radial-gradient(circle at 50% 50%, #5e0f1c, #1b0408); opacity: .85; }
+.mine-tile.shown-gem { background: radial-gradient(circle at 35% 30%, #3a3320, #1b1d24); opacity: .6; }
+@keyframes pop { 0% { transform: scale(.6); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+.mines-how { margin: 0 0 16px; padding-left: 1.3em; line-height: 1.5; color: var(--text); font-size: .92rem; }
+.mines-how li { margin-bottom: 4px; }
 .cross-card { background: radial-gradient(circle at 15% 50%, #1d4ed8 0%, #0b1f5c 55%, #15171e 100%); }
 .cross-board canvas { width: 100%; display: block; border-radius: 10px; touch-action: manipulation; cursor: pointer; }
 .cross-actions { display: flex; gap: 8px; width: min(100%, 440px); }
@@ -379,7 +406,7 @@ body[data-view="home"] .win-toast { bottom: 86px; }
 #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 
 @media (max-width: 760px) {
-  .view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]) { grid-template-columns: 1fr; grid-template-areas: "back" "stage" "side"; }
+  .view.spin-view:not([hidden]), .view.drop-view:not([hidden]), .view.cross-view:not([hidden]), .view.mines-view:not([hidden]) { grid-template-columns: 1fr; grid-template-areas: "back" "stage" "side"; }
   h1 { font-size: 1.5rem; }
   .stats { width: 100%; }
   .stat { flex: 1; min-width: 0; padding: 8px 6px; }

@@ -16,6 +16,12 @@ https://vinsmokeee.github.io/MyGame-/ (GitHub Pages). No build step is needed.
   come back; each win is shown once per phone.
 - The owner page shows each player's spins and drops separately (`drops` in the account).
 
+## SOMA Mines (`mines.js`)
+A 5×5 board hides gems and 1, 3, 5 or 10 mines (player's choice, shown clearly above the board). Tap tiles: each gem
+raises the prize, a mine loses the bet; cash out any time. Prize after k gems with M mines = 0.88 × C(25,k) / C(25−M,k)
+(the fair price of surviving minus the house share), capped at Nu 250,000, so every strategy gets back ~88%.
+Mines are placed with secure random numbers when the round starts.
+
 ## SOMA Cross (`cross.js`)
 Help the chicken cross 10 roads. Each road hides a random prize (shown as ?, revealed when the chicken lands safely) (×0.5–×10; ×5 from road 4, ×10 from road 8). Every
 GO is one hop; after a safe hop a barrier protects the chicken and the player can CASH OUT that road's prize or hop on.

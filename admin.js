@@ -183,9 +183,10 @@ async function start() {
       // "spins" in the account counts every play; drops are counted separately.
       const drops = p.drops || 0;
       const crosses = p.crosses || 0;
+      const mines = p.minesPlayed || 0;
       const twins = p.deviceId ? [...players.values()].filter((o) => o.uid !== p.uid && o.deviceId === p.deviceId) : [];
       li.querySelector('.twin').textContent = twins.length ? `⚠ Same phone as ${twins.map((o) => '@' + (o.username || o.name || '?')).join(', ')}` : '';
-      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${Math.max(0, (p.spins || 0) - drops - crosses)} spins`, `${drops} drops`, `${crosses} crosses`].filter(Boolean).join(' · ');
+      li.querySelector('.sub').textContent = [p.username && `@${p.username}`, p.gender, `Balance ${fmtNu(p.nu || 0)}`, `${Math.max(0, (p.spins || 0) - drops - crosses - mines)} spins`, `${drops} drops`, `${crosses} crosses`, `${mines} mines`].filter(Boolean).join(' · ');
       ul.append(li);
     }
   }
