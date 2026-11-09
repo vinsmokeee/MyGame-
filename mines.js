@@ -1,5 +1,5 @@
 // SOMA Mines: a 5×5 board hides 20 💎 gems and 5 💣 mines. Pick a bet and tap tiles: each gem raises the
-// prize, a mine loses the bet. Cash out from 5 gems. Uses the shared SOMA account and Nu balance.
+// prize, a mine loses the bet. Cash out from 7 gems. Uses the shared SOMA account and Nu balance.
 (() => {
   'use strict';
   const game = window.LuckySpin;
@@ -8,7 +8,7 @@
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
   const MINES = 6; // every round hides 6 mines
-  const MIN_GEMS_TO_CASH = 5; // cash out unlocks after 5 gems
+  const MIN_GEMS_TO_CASH = 7; // cash out unlocks after 7 gems
   const TILES = 25;
   const RTP = 0.88; // share of bets paid back over time, whatever the player does (simulated: ~87–88%)
   const MAX_WIN = 250000; // biggest prize, same as the SOMA Spin jackpot
@@ -44,15 +44,15 @@
       'Pick your bet and tap any tile.',
       'Find 💎 gems: every gem raises your prize. 6 tiles hide 💣 mines.',
       'Hit a 💣 and you lose your bet.',
-      'Cash out from 5 gems, before you hit a mine!',
-      'Prizes below: after 5, 8 and 10 gems.',
+      'Cash out from 7 gems, before you hit a mine!',
+      'Prizes below: after 7, 10 and 12 gems.',
     ],
-    prizes: (b) => [5, 8, 10].map((g) => payoutFor(b, MINES, g)),
+    prizes: (b) => [7, 10, 12].map((g) => payoutFor(b, MINES, g)),
   });
 
   // simple prize table: gems found -> prize for each bet
   function buildPayTable() {
-    const gemsRows = [5, 6, 7, 8, 10, 12];
+    const gemsRows = [7, 8, 9, 10, 12, 14];
     const head = $('minesPayHead');
     const body = $('minesPayBody');
     head.replaceChildren();
@@ -65,7 +65,7 @@
       const first = document.createElement('td');
       first.textContent = String(g);
       row.append(first);
-      for (const b of BETS) { const td = document.createElement('td'); td.textContent = payoutFor(b, MINES, g).toLocaleString('en-US'); if (g >= 8) td.className = 'jp'; row.append(td); }
+      for (const b of BETS) { const td = document.createElement('td'); td.textContent = payoutFor(b, MINES, g).toLocaleString('en-US'); if (g >= 10) td.className = 'jp'; row.append(td); }
       body.append(row);
     }
   }

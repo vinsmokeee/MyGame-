@@ -1,6 +1,6 @@
 // Player's online features: accounts (username + password, so progress follows the
 // player to any phone), chat with the team (text + photos), and Nu added by the team.
-import { loadFirebase, compressImage, renderMessages, MAX_TEXT } from './shared.js?v=20261109';
+import { loadFirebase, compressImage, renderMessages, MAX_TEXT } from './shared.js?v=20261109b';
 
 const cfg = window.CHAT_CONFIG;
 const game = window.LuckySpin;
