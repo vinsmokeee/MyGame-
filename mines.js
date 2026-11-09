@@ -1,5 +1,5 @@
 // SOMA Mines: a 5×5 board hides 20 💎 gems and 5 💣 mines. Pick a bet and tap tiles: each gem raises the
-// prize, a mine loses the bet. Cash out from 3 gems. Uses the shared SOMA account and Nu balance.
+// prize, a mine loses the bet. Cash out from 5 gems. Uses the shared SOMA account and Nu balance.
 (() => {
   'use strict';
   const game = window.LuckySpin;
@@ -7,8 +7,8 @@
 
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
-  const MINES = 8; // every round hides 8 mines
-  const MIN_GEMS_TO_CASH = 3; // cash out unlocks after 3 gems
+  const MINES = 5; // every round hides 5 mines
+  const MIN_GEMS_TO_CASH = 5; // cash out unlocks after 5 gems
   const TILES = 25;
   const RTP = 0.88; // share of bets paid back over time, whatever the player does (simulated: ~87–88%)
   const MAX_WIN = 250000; // biggest prize, same as the SOMA Spin jackpot
@@ -42,17 +42,17 @@
     title: '💎 SOMA Mines',
     help: [
       'Pick your bet and tap any tile.',
-      'Find 💎 gems: every gem raises your prize. 8 tiles hide 💣 mines.',
+      'Find 💎 gems: every gem raises your prize. 5 tiles hide 💣 mines.',
       'Hit a 💣 and you lose your bet.',
-      'Cash out from 3 gems, before you hit a mine!',
-      'Prizes below: after 3, 5 and 8 gems.',
+      'Cash out from 5 gems, before you hit a mine!',
+      'Prizes below: after 5, 8 and 10 gems.',
     ],
-    prizes: (b) => [3, 5, 8].map((g) => payoutFor(b, MINES, g)),
+    prizes: (b) => [5, 8, 10].map((g) => payoutFor(b, MINES, g)),
   });
 
   // simple prize table: gems found -> prize for each bet
   function buildPayTable() {
-    const gemsRows = [3, 4, 5, 6, 8, 10];
+    const gemsRows = [5, 6, 7, 8, 10, 12];
     const head = $('minesPayHead');
     const body = $('minesPayBody');
     head.replaceChildren();
