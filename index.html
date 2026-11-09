@@ -56,6 +56,14 @@
         </span>
         <span class="game-play">Play</span>
       </a>
+      <a class="game-card mines-card" href="#mines">
+        <span class="game-art" aria-hidden="true">💎</span>
+        <span class="game-info">
+          <strong>SOMA Mines</strong>
+          <span>Find the gems, dodge the mines. You choose the risk!</span>
+        </span>
+        <span class="game-play">Play</span>
+      </a>
       <div class="game-card soon" aria-disabled="true">
         <span class="game-art" aria-hidden="true">✨</span>
         <span class="game-info"><strong>More games</strong><span>Coming soon</span></span>
@@ -101,6 +109,63 @@
     <ul id="legend" class="legend"></ul>
     <h2>History</h2>
     <ol id="history" class="history"></ol>
+    </section>
+  </section>
+
+  <!-- ===== SOMA Mines ===== -->
+  <section id="view-mines" class="view mines-view" data-title="SOMA Mines" hidden>
+    <a class="back-link" href="#">← All games</a>
+    <section class="stage">
+      <div class="mines-pick">
+        <div class="mines-pick-title">💣 How many mines?</div>
+        <div id="minesCount" class="bets mines-count" role="group" aria-label="Number of mines">
+          <button type="button" data-mines="1">1</button>
+          <button type="button" data-mines="3" class="on">3</button>
+          <button type="button" data-mines="5">5</button>
+          <button type="button" data-mines="10">10</button>
+        </div>
+        <div class="mines-pick-hint">More mines = bigger prizes, but more danger!</div>
+      </div>
+      <div class="mines-info">
+        <span>Next gem: <strong id="minesNext">×1.00</strong></span>
+        <span>Now: <strong id="minesNow">—</strong></span>
+      </div>
+      <div id="minesLadder" class="mines-ladder" aria-label="Prize ladder"></div>
+      <div class="board mines-board">
+        <div id="minesGrid" class="mines-grid" role="grid" aria-label="SOMA Mines board"></div>
+        <div id="minesFlash" class="mines-flash" aria-hidden="true"></div>
+      </div>
+      <div class="mines-bar">
+        <span id="minesGems" class="mines-gems">💎 0 / 22</span>
+        <button id="minesRandom" class="secondary small" type="button">🎲 Random tile</button>
+      </div>
+      <p id="minesMessage" class="message" role="status" aria-live="polite">Pick your bet and mines, then tap any tile to start.</p>
+      <div class="drop-controls">
+        <div id="minesBets" class="bets" role="group" aria-label="Bet">
+          <button type="button" data-bet="20" class="on">Nu 20</button>
+          <button type="button" data-bet="50">Nu 50</button>
+          <button type="button" data-bet="100">Nu 100</button>
+          <button type="button" data-bet="500">Nu 500</button>
+        </div>
+        <button id="minesSound" class="icon-btn drop-sound" type="button" aria-label="Sound on or off" aria-pressed="true">🔊</button>
+      </div>
+      <div class="cross-actions">
+        <button id="minesCash" class="cross-cash" type="button" disabled>CASH OUT</button>
+      </div>
+    </section>
+    <section class="side">
+      <h2>How to play</h2>
+      <ol class="mines-how">
+        <li>Pick your <strong>bet</strong>.</li>
+        <li>Choose <strong>how many mines</strong> (1, 3, 5 or 10). More mines = bigger prizes.</li>
+        <li><strong>Tap tiles</strong> to find 💎 gems. Each gem raises your prize.</li>
+        <li><strong>Cash out</strong> any time, before you hit a 💣 mine!</li>
+      </ol>
+      <h2>Prizes (×bet)</h2>
+      <table class="pay" aria-label="Prizes by gems found">
+        <thead id="minesPayHead"></thead>
+        <tbody id="minesPayBody"></tbody>
+      </table>
     </section>
   </section>
 
@@ -361,6 +426,7 @@
 <script src="game.js"></script>
 <script src="drop.js"></script>
 <script src="cross.js"></script>
+<script src="mines.js"></script>
 <script type="module" src="online.js"></script>
 </body>
 </html>
