@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <title>SOMA Games</title>
-<link rel="stylesheet" href="style.css?v=20261110">
+<link rel="stylesheet" href="style.css?v=20261110b">
 </head>
 <body>
 <main class="app">
@@ -288,15 +288,35 @@
   <h2>Welcome to SOMA Games</h2>
   <div class="welcome-id">Your ID<strong id="welcomeId"></strong></div>
   <ol id="welcomeList" class="welcome-list">
-    <li>Every new player gets a <strong>Nu 100</strong> bonus as a gift from our team.</li>
+    <li>Your account starts at <strong>Nu 0</strong>. To start playing, recharge by messaging us from the game (☰ Menu → Contact us / Recharge Nu).</li>
+    <li>🎁 After your first <strong>10 plays</strong>, you get a <strong>Nu 50</strong> new player gift.</li>
+    <li>Plus a free <strong>Nu 20</strong> every 10 plays.</li>
     <li>Win up to <strong>Nu 50,000</strong> &amp; <strong>Nu 250,000</strong>.</li>
     <li>24/7 chat support by the team.</li>
-    <li>If you want to recharge, you can directly message us from the game.</li>
     <li>This is a fair game: every result is random and every player has the same chances. Every spin and every drop is a new shot at the <strong>Jackpot</strong>, so play for fun and your lucky moment could be next!</li>
   </ol>
-  <p id="welcomeNoGift" class="welcome-nogift" hidden>This phone already received the Nu 100 welcome gift for another account, so this account starts with Nu 0. Message the team to recharge.</p>
+  <p id="welcomeNoGift" class="welcome-nogift" hidden>This phone already received the new player gift for another account, so this account won't get the Nu 50 gift.</p>
   <p class="welcome-bye">Tashi Delek, Good Luck 🍀</p>
   <form method="dialog" class="row end"><button class="primary" type="submit">Let's play!</button></form>
+</dialog>
+
+<dialog id="announceDialog" class="dialog welcome">
+  <h2>📢 Announcement</h2>
+  <ol class="welcome-list">
+    <li>New accounts no longer get the free <strong>Nu 100</strong> welcome gift.</li>
+    <li>🎁 Instead, every new player gets <strong>Nu 50</strong> after their first <strong>10 plays</strong> (spins, drops, crosses or mines).</li>
+    <li>The free <strong>Nu 20</strong> every 10 plays continues for everyone.</li>
+    <li>Recharge anytime by messaging us from the game: ☰ Menu → Contact us / Recharge Nu.</li>
+  </ol>
+  <p class="welcome-bye">Tashi Delek, Good Luck 🍀</p>
+  <form method="dialog" class="row end"><button class="primary" type="submit">OK, got it!</button></form>
+</dialog>
+
+<dialog id="giftDialog" class="dialog welcome">
+  <h2>🎁 New player gift!</h2>
+  <p>You finished your first 10 plays, so <strong>Nu 50</strong> has been added to your balance.</p>
+  <p class="welcome-bye">Enjoy, and good luck 🍀</p>
+  <form method="dialog" class="row end"><button class="primary" type="submit">Thanks!</button></form>
 </dialog>
 
 <dialog id="prizeNoteDialog" class="dialog prize-note">
@@ -407,12 +427,12 @@
 </div>
 
 <canvas id="confetti" aria-hidden="true"></canvas>
-<script src="telegram.js?v=20261110"></script>
-<script src="chat-config.js?v=20261110"></script>
-<script src="game.js?v=20261110"></script>
-<script src="drop.js?v=20261110"></script>
-<script src="cross.js?v=20261110"></script>
-<script src="mines.js?v=20261110"></script>
-<script type="module" src="online.js?v=20261110"></script>
+<script src="telegram.js?v=20261110b"></script>
+<script src="chat-config.js?v=20261110b"></script>
+<script src="game.js?v=20261110b"></script>
+<script src="drop.js?v=20261110b"></script>
+<script src="cross.js?v=20261110b"></script>
+<script src="mines.js?v=20261110b"></script>
+<script type="module" src="online.js?v=20261110b"></script>
 </body>
 </html>

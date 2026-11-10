@@ -1,7 +1,8 @@
 (() => {
   'use strict';
 
-  const START_NU = 100;
+  const START_NU = 0; // no welcome gift: new accounts start at Nu 0 and recharge to play
+  const NEW_PLAYER_GIFT = 50; // one-time gift for a new player after their first BONUS_EVERY plays
   const FULL_PRIZE_BET = 100; // the big prizes pay their listed amount at this bet
   const SPIN_MS = 5000;
   const STORE_KEY = 'luckySpin.v1';
@@ -72,7 +73,7 @@
     try { s = JSON.parse(localStorage.getItem(STORE_KEY)); } catch (_) { /* storage unavailable */ }
     return normalize(s);
   }
-  // Fills in anything missing; a brand-new player starts with the Nu 100 welcome gift.
+  // Fills in anything missing; a brand-new player starts at Nu 0.
   function normalize(s) {
     const fresh = !s || typeof s !== 'object';
     if (fresh) s = {};
@@ -85,7 +86,7 @@
     if (!Array.isArray(s.grants)) s.grants = [];
     if (!isIdNumber(s.playerId)) { s.playerId = randomIdNumber(); delete s.idOwner; } // older saves used letters
     if (!s.name) s.name = 'Player ' + s.playerId.slice(-4);
-    if (fresh) s.history = [{ label: 'Welcome gift', net: START_NU }];
+    if (fresh) s.history = [];
     return s;
   }
   function save() {
@@ -228,6 +229,21 @@
     state.nu += BONUS_NU;
     state.best = Math.max(state.best, state.nu);
     addHistory('Play bonus', BONUS_NU);
+    // New players: the one-time Nu 50 gift arrives with their first play bonus (after 10 plays).
+    if (seenNotes().gift50 === 'pending') {
+      state.prizeNoteSeen = { ...seenNotes(), gift50: 'given' };
+      state.nu += NEW_PLAYER_GIFT;
+      state.best = Math.max(state.best, state.nu);
+      addHistory('New player gift', NEW_PLAYER_GIFT);
+      setTimeout(showGiftPopup, 1600);
+    }
+  }
+  function showGiftPopup() {
+    if (document.querySelector('dialog[open]')) { setTimeout(showGiftPopup, 1500); return; }
+    ensureAudio();
+    chime([523, 659, 784, 1047, 1319]);
+    confetti(200);
+    $('giftDialog').showModal();
   }
 
   function spin() {
@@ -339,7 +355,8 @@
 
     const done = state.spins % BONUS_EVERY;
     const left = BONUS_EVERY - done;
-    $('bonusText').textContent = `${left} more play${left === 1 ? '' : 's'} to get a free ${fmtNu(BONUS_NU)}`;
+    const giftNext = seenNotes().gift50 === 'pending' ? ` + ${fmtNu(NEW_PLAYER_GIFT)} new player gift` : '';
+    $('bonusText').textContent = `${left} more play${left === 1 ? '' : 's'} to get a free ${fmtNu(BONUS_NU)}${giftNext}`;
     $('bonusFill').style.width = `${(done / BONUS_EVERY) * 100}%`;
 
     const hist = $('history');
@@ -589,21 +606,32 @@
     }
   }
   // Which games' notes this player has seen, e.g. { spin: true, drop: true }.
+  // Change this id to show a new announcement to everyone once.
+  const ANNOUNCEMENT_ID = 'announce-nogift';
   const seenNotes = () => (state.prizeNoteSeen && typeof state.prizeNoteSeen === 'object' ? state.prizeNoteSeen : {});
   let accountReady = !(window.CHAT_CONFIG && window.CHAT_CONFIG.firebase); // online: wait until logged in
   // Shows the note for the game on screen, once per player per game.
   function maybeShowGameNote() {
     const id = currentView;
     const g = window.SOMA_PRIZES.find((x) => x.id === id);
-    if (!accountReady || !g || seenNotes()[id] || document.querySelector('dialog[open]')) return;
+    if (!accountReady || document.querySelector('dialog[open]')) return;
+    // One-time announcement for every player (shown before any game note).
+    if (!seenNotes()[ANNOUNCEMENT_ID]) {
+      state.prizeNoteSeen = { ...seenNotes(), [ANNOUNCEMENT_ID]: true };
+      save();
+      $('announceDialog').showModal();
+      return;
+    }
+    if (!g || seenNotes()[id]) return;
     fillPrizeLines($('prizeNoteGames'), id);
     $('prizeNoteTitle').textContent = `*Note: ${g.title.replace(/^\S+\s/, '')}`;
     state.prizeNoteSeen = { ...seenNotes(), [id]: true };
     save();
     $('prizeNoteDialog').showModal();
   }
-  // After the welcome pop-up, show the note if the player is already in a game.
+  // After the welcome pop-up or the announcement, show the note if the player is already in a game.
   $('welcomeDialog').addEventListener('close', () => setTimeout(maybeShowGameNote, 0));
+  $('announceDialog').addEventListener('close', () => setTimeout(maybeShowGameNote, 0));
 
   function startSignup() {
     const dlg = $('signupDialog');
@@ -717,7 +745,7 @@
   // ---------- API for online.js (chat, owner gifts, profile sync) ----------
   // Fields saved to the player's online account (so they can log in on any phone).
   const ACCOUNT_FIELDS = ['name', 'username', 'gender', 'playerId', 'nu', 'best', 'spins', 'drops', 'crosses', 'minesPlayed', 'history', 'grants', 'prizeNoteSeen', 'deviceId'];
-  // A hidden ID for this phone/browser (kept after log out), used to give the welcome gift once per phone.
+  // A hidden ID for this phone/browser (kept after log out), used to give the new player gift once per phone.
   function deviceId() {
     let id = null;
     try { id = localStorage.getItem('soma.device'); } catch (_) { /* ignore */ }
@@ -773,16 +801,14 @@
     },
     get username() { return state.username || ''; },
     ensureDeviceId() { if (!state.deviceId) { state.deviceId = deviceId(); save(); } },
-    // A new account: fresh start with the Nu 100 welcome gift.
-    // gift: false when this phone already received the welcome gift for another account.
+    // A new account: fresh start at Nu 0, with the Nu 50 new player gift waiting for their first 10 plays.
+    // gift: false when this phone already had a new player gift for another account.
     startFresh({ username, gender, owner, gift = true }) {
       state = normalize(null);
       Object.assign(state, { name: username, username, gender, uid: owner, deviceId: deviceId() });
-      if (!gift) {
-        state.nu = 0;
-        state.best = 0;
-        state.history = [{ label: 'Welcome gift already used on this phone', net: 0 }];
-      }
+      // New players learn the news from the welcome pop-up, so they skip the announcement.
+      state.prizeNoteSeen = { [ANNOUNCEMENT_ID]: true, ...(gift ? { gift50: 'pending' } : {}) };
+      if (!gift) state.history = [{ label: 'New player gift already used on this phone', net: 0 }];
       refreshAll();
     },
     // Turn this phone's existing progress into an account (keeps Nu, ID and history).
