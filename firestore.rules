@@ -40,13 +40,15 @@ service cloud.firestore {
             && request.resource.data.grants.size() <= 500))
         && optString(request.resource.data, 'playerId', 12);
 
-      // Nu sent by the owner. Only the owner can create them; the player removes each one once added.
+      // Nu added (positive amount) or deducted (negative amount) by the owner.
+      // Only the owner can create them; the player's game removes each one once applied.
       match /grants/{grantId} {
         allow read, delete: if isAdmin() || isOwner(uid);
         allow create: if isAdmin()
           && request.resource.data.keys().hasOnly(['amount', 'createdAt'])
           && request.resource.data.amount is int
-          && request.resource.data.amount > 0
+          && request.resource.data.amount != 0
+          && request.resource.data.amount >= -1000000000
           && request.resource.data.amount <= 1000000000;
       }
     }
