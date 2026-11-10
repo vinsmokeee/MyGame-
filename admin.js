@@ -1,5 +1,5 @@
 // Owner tools: see players, give Nu, and chat (text + photos).
-import { loadFirebase, compressImage, renderMessages, fmtNu, fmtTime, MAX_TEXT } from './shared.js?v=20261109c';
+import { loadFirebase, compressImage, renderMessages, fmtNu, fmtTime, MAX_TEXT } from './shared.js?v=20261110';
 
 const cfg = window.CHAT_CONFIG;
 const $ = (id) => document.getElementById(id);
@@ -117,6 +117,22 @@ async function start() {
     await fb.addDoc(fb.collection(db, 'players', uid, 'grants'), { amount, createdAt: fb.serverTimestamp() });
   }
 
+  // ----- deducting Nu -----
+  // Sent like a recharge with a negative amount; the player's game takes it off (never below Nu 0).
+  const deductText = (amount) => `${fmtNu(amount)} was deducted from your balance`;
+  async function deductNu(uid, amount) {
+    if (!Number.isInteger(amount) || amount < 1 || amount > MAX_GIFT) {
+      throw new Error(`Enter a whole number from 1 to ${MAX_GIFT.toLocaleString('en-US')}.`);
+    }
+    const p = players.get(uid) || {};
+    const bal = p.nu || 0;
+    const ok = confirm(`Deduct ${fmtNu(amount)} from ${p.name || 'this player'} (ID ${p.playerId || '?'})?\n\nTheir balance is ${fmtNu(bal)}.`
+      + (amount > bal ? `\nThey have less than that, so their balance will go to Nu 0.` : ''));
+    if (!ok) return false;
+    await fb.addDoc(fb.collection(db, 'players', uid, 'grants'), { amount: -amount, createdAt: fb.serverTimestamp() });
+    return Math.min(amount, bal); // what actually comes off (the balance can't go below Nu 0)
+  }
+
   // ----- players tab -----
   $('search').addEventListener('input', renderPlayers);
   // Rows are kept and updated in place, so typed amounts and "Sent" messages survive live updates.
@@ -199,8 +215,9 @@ async function start() {
         <div class="sub"></div>
         <div class="twin"></div>
         <form class="actions">
-          <input type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
+          <input type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu amount">
           <button class="primary small" type="submit">Add Nu</button>
+          <button class="danger small" type="button" data-deduct>Deduct Nu</button>
           <button class="secondary small" type="button" data-chat>💬 Chat</button>
         </form>
         <p class="status" role="status"></p>`;
@@ -215,6 +232,16 @@ async function start() {
           await send({ text: rechargeText(amount) }, rechargeText(amount), uid).catch(() => {});
           status(msg, `Sent ${fmtNu(amount)} to ${name} (ID ${(players.get(uid) || {}).playerId || '?'}).`, true);
         } catch (err) { status(msg, err.message || 'Could not send Nu.', false); }
+      });
+      li.querySelector('[data-deduct]').addEventListener('click', async () => {
+        const amount = Number(form.querySelector('input').value);
+        const p = players.get(uid) || {};
+        try {
+          const taken = await deductNu(uid, amount);
+          if (taken === false) return;
+          await send({ text: deductText(taken) }, deductText(taken), uid).catch(() => {});
+          status(msg, `Deducted ${fmtNu(taken)} from ${p.name || 'player'} (ID ${p.playerId || '?'}).`, true);
+        } catch (err) { status(msg, err.message || 'Could not deduct Nu.', false); }
       });
       li.querySelector('[data-chat]').addEventListener('click', () => { showTab('inbox'); openThread(uid); });
       rows.set(uid, li);
@@ -351,5 +378,16 @@ async function start() {
       await send({ text: rechargeText(amount) }, rechargeText(amount));
       status($('threadMsg'), `Sent ${fmtNu(amount)}.`, true);
     } catch (err) { status($('threadMsg'), err.message || 'Could not send Nu.', false); }
+  });
+
+  $('threadDeduct').addEventListener('click', async () => {
+    if (!current) return;
+    const amount = Number($('threadGiftAmount').value);
+    try {
+      const taken = await deductNu(current, amount);
+      if (taken === false) return;
+      await send({ text: deductText(taken) }, deductText(taken));
+      status($('threadMsg'), `Deducted ${fmtNu(taken)}.`, true);
+    } catch (err) { status($('threadMsg'), err.message || 'Could not deduct Nu.', false); }
   });
 }

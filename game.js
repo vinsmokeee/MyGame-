@@ -854,11 +854,20 @@
     get nu() { return state.nu; },
     get spins() { return state.spins; },
     onChange(cb) { listeners.push(cb); },
-    // Adds Nu sent by the owner. Each gift id is applied only once.
+    // Adds Nu sent by the owner (or takes Nu away when the amount is negative). Each id is applied only once.
     applyGift(id, amount) {
-      if (!id || state.grants.includes(id) || !Number.isFinite(amount) || amount <= 0) return false;
+      if (!id || state.grants.includes(id) || !Number.isFinite(amount) || amount === 0) return false;
       state.grants.push(id);
       state.grants = state.grants.slice(-500);
+      if (amount < 0) {
+        const take = Math.min(Math.floor(-amount), state.nu); // never below Nu 0
+        state.nu -= take;
+        addHistory('Deducted by SOMA team', -take);
+        save();
+        render();
+        if (!spinning) setMessage(`${fmtNu(take)} was deducted from your balance by the SOMA team`, 'lose');
+        return true;
+      }
       state.nu += Math.floor(amount);
       state.best = Math.max(state.best, state.nu);
       addHistory('Recharge', Math.floor(amount));

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>SOMA Games Owner</title>
-<link rel="stylesheet" href="style.css?v=20261109c">
+<link rel="stylesheet" href="style.css?v=20261110">
 <style>
   .admin { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
   .card { background: var(--panel); border-radius: 14px; padding: 16px; }
@@ -108,8 +108,9 @@
           <button class="primary" type="submit">Send</button>
         </form>
         <form id="threadGift" class="gift">
-          <input id="threadGiftAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu to give">
+          <input id="threadGiftAmount" type="number" inputmode="numeric" min="1" step="1" value="100" aria-label="Nu amount">
           <button class="secondary" type="submit">Add Nu</button>
+          <button id="threadDeduct" class="danger" type="button">Deduct Nu</button>
         </form>
         <p id="threadMsg" class="status" role="status"></p>
       </div>
@@ -118,7 +119,7 @@
     <p style="margin:16px 0 0"><button id="signOut" class="secondary small" type="button">Sign out</button></p>
   </section>
 </main>
-<script src="chat-config.js?v=20261109c"></script>
-<script type="module" src="admin.js?v=20261109c"></script>
+<script src="chat-config.js?v=20261110"></script>
+<script type="module" src="admin.js?v=20261110"></script>
 </body>
 </html>

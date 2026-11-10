@@ -191,6 +191,11 @@ button.primary {
   padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer;
 }
 button.primary:hover { filter: brightness(1.08); }
+button.danger {
+  background: transparent; color: var(--lose); border: 1px solid var(--lose); border-radius: 8px;
+  padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer;
+}
+button.danger:hover { background: rgba(239, 68, 68, .12); }
 button:disabled { opacity: .55; cursor: not-allowed; }
 button.small { padding: 4px 10px; font-size: .8rem; }
 input, textarea {
