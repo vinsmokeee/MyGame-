@@ -1,6 +1,6 @@
 // SOMA Cross: help the chicken cross 10 roads. Each road has a fixed prize: ×0.5 on road 1, ×1 on road 2,
 // and so on up to ×5 on road 10. Every road is riskier than the one before. After a safe hop a barrier
-// protects the chicken; from road 5 the player can cash out, or hop on for a bigger prize. A car can hit
+// protects the chicken; from road 7 the player can cash out, or hop on for a bigger prize. A car can hit
 // the chicken on any hop. Uses the shared SOMA account and Nu balance (window.LuckySpin).
 (() => {
   'use strict';
@@ -10,12 +10,12 @@
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
   const ROADS = 10;
-  const CASH_FROM = 5; // cash out unlocks on road 5
+  const CASH_FROM = 7; // cash out unlocks on road 7
   const PRIZES = Array.from({ length: ROADS }, (_, i) => (i + 1) / 2); // ×0.5, ×1, ×1.5 … ×5
-  // Chance of crossing each road safely: 85% on road 1, then 2% less on every road (67% on road 10).
-  // Chance of reaching road 5 is about 35% (pays ×2.5 = about 88% back over time); going further pays
+  // Chance of crossing each road safely: 88% on road 1, then 2% less on every road (70% on road 10).
+  // Chance of reaching road 7 is about 25% (pays ×3.5 = about 88% back over time); going further pays
   // more but the odds drop faster, so every strategy gets back at most about 88% of the bets over time.
-  const FIRST_SAFE = 0.852;
+  const FIRST_SAFE = 0.882;
   const SAFE_STEP = 0.02;
   const HOP_SAFE = PRIZES.map((_, i) => FIRST_SAFE - SAFE_STEP * i);
 
@@ -39,13 +39,13 @@
       'Pick your bet and press GO to hop to the next road.',
       'Every road pays more: ×0.5, ×1, ×1.5 … up to ×5 on road 10.',
       'Every road is also busier, so the risk grows.',
-      'Cash out from road 5, before a car gets you!',
-      'Prizes below: road 5, 8 and 10.',
+      'Cash out from road 7, before a car gets you!',
+      'Prizes below: road 7, 8 and 10.',
     ],
-    prizes: (b) => [5, 8, 10].map((r) => Math.floor(b * PRIZES[r - 1])),
+    prizes: (b) => [7, 8, 10].map((r) => Math.floor(b * PRIZES[r - 1])),
   });
   (function buildPrizes() {
-    const roadsShown = [5, 6, 7, 8, 9, 10];
+    const roadsShown = [7, 8, 9, 10];
     const tr = document.createElement('tr');
     for (const t of ['Road', ...BETS.map((b) => 'Nu ' + b)]) { const th = document.createElement('th'); th.textContent = t; tr.append(th); }
     $('crossPayHead').append(tr);
