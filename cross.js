@@ -1,5 +1,4 @@
-// SOMA Cross: help the chicken cross 10 roads. Each road has a fixed prize: ×0.5 on road 1, ×1 on road 2,
-// and so on up to ×5 on road 10. Every road is riskier than the one before. After a safe hop a barrier
+// SOMA Cross: help the chicken cross 10 roads. Each road has a fixed prize, growing up to ×15 on road 10. Every road is riskier than the one before. After a safe hop a barrier
 // protects the chicken; from road 7 the player can cash out, or hop on for a bigger prize. A car can hit
 // the chicken on any hop. Uses the shared SOMA account and Nu balance (window.LuckySpin).
 (() => {
@@ -11,11 +10,11 @@
   const BETS = [20, 50, 100, 500];
   const ROADS = 10;
   const CASH_FROM = 7; // cash out unlocks on road 7
-  const PRIZES = Array.from({ length: ROADS }, (_, i) => (i + 1) / 2); // ×0.5, ×1, ×1.5 … ×5
-  // Chance of crossing each road safely: 88% on road 1, then 2% less on every road (70% on road 10).
-  // Chance of reaching road 7 is about 25% (pays ×3.5 = about 88% back over time); going further pays
-  // more but the odds drop faster, so every strategy gets back at most about 88% of the bets over time.
-  const FIRST_SAFE = 0.882;
+  const PRIZES = [1, 1.5, 2, 3, 4, 6, 8.8, 11, 13, 15]; // road 1 … road 10 (roads 1–6 are locked)
+  // Chance of crossing each road safely: 78% on road 1, then 2% less on every road (60% on road 10).
+  // About 1 in 10 rounds reach road 7 (pays ×8.8 = about 88% back over time); going further pays more
+  // but the odds drop faster, so every strategy gets back at most about 88% of the bets over time.
+  const FIRST_SAFE = 0.7808;
   const SAFE_STEP = 0.02;
   const HOP_SAFE = PRIZES.map((_, i) => FIRST_SAFE - SAFE_STEP * i);
 
@@ -37,7 +36,7 @@
     title: '🐔 SOMA Cross',
     help: [
       'Pick your bet and press GO to hop to the next road.',
-      'Every road pays more: ×0.5, ×1, ×1.5 … up to ×5 on road 10.',
+      'Every road pays more: ×8.8 on road 7, up to ×15 on road 10.',
       'Every road is also busier, so the risk grows.',
       'Cash out from road 7, before a car gets you!',
       'Prizes below: road 7, 8 and 10.',
@@ -72,8 +71,8 @@
       game.sound.beep(440, 0.02, 0.08, 0.04, 'triangle');
     },
     reveal(m) { // safe landing: brighter for bigger prizes
-      if (m >= 5) { game.sound.chime([523, 659, 784, 1047, 1319, 1568]); return; }
-      if (m >= 4) { game.sound.chime([523, 659, 784, 1047, 1319]); return; }
+      if (m >= 15) { game.sound.chime([523, 659, 784, 1047, 1319, 1568]); return; }
+      if (m >= 8) { game.sound.chime([523, 659, 784, 1047, 1319]); return; }
       if (m >= 3) { game.sound.chime([659, 880, 1175]); return; }
       if (m >= 2) { game.sound.chime([587, 880]); return; }
       if (m >= 1) { game.sound.beep(523, 0.05, 0.2, 0.08); return; }
@@ -157,10 +156,10 @@
     game.announceWin('SOMA Cross', label(m), payout, m);
     let text = payout > round.bet ? `🎉 Cashed out ${label(m)}: ${fmtNu(payout)} added to your balance!` : `Cashed out ${label(m)}: ${fmtNu(payout)} added to your balance.`;
     if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
-    say(text, payout > round.bet ? (m >= 5 ? 'jackpot' : 'win') : '');
+    say(text, payout > round.bet ? (m >= 11 ? 'jackpot' : 'win') : '');
     if (!auto) {
       sfx.coins(Math.min(12, 4 + Math.round(m * 1.5)));
-      game.celebrate(m >= 5 ? 'jackpot' : m >= 4 ? 'big' : 'win');
+      game.celebrate(m >= 15 ? 'jackpot' : 'big');
     }
     endRound();
   }
@@ -399,7 +398,7 @@
     const x = colX(i);
     const r = 22;
     ctx.save();
-    const col = m >= 5 ? ['#fbe7a8', '#8a6414'] : m >= 4 ? ['#c0263f', '#5e0f1c'] : i >= CASH_FROM - 1 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
+    const col = i === ROADS - 1 ? ['#fbe7a8', '#8a6414'] : i >= CASH_FROM ? ['#c0263f', '#5e0f1c'] : i >= CASH_FROM - 1 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
     ctx.globalAlpha = state === 'passed' ? 0.4 : 1;
     if (state === 'current') { ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = 18; }
     const g = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
@@ -407,7 +406,7 @@
     ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
     ctx.shadowBlur = 0;
     ctx.lineWidth = 2; ctx.strokeStyle = state === 'current' ? '#fff3c4' : 'rgba(232,196,106,.85)'; ctx.stroke();
-    ctx.fillStyle = m >= 5 ? '#2a1d00' : i >= CASH_FROM - 1 ? '#f4d27c' : '#a3a7b0';
+    ctx.fillStyle = i === ROADS - 1 ? '#2a1d00' : i >= CASH_FROM - 1 ? '#f4d27c' : '#a3a7b0';
     ctx.font = '900 15px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label(m), x, CY + 7);
