@@ -1,5 +1,5 @@
 // Owner tools: see players, give Nu, and chat (text + photos).
-import { loadFirebase, compressImage, renderMessages, fmtNu, fmtTime, MAX_TEXT } from './shared.js?v=20261110b';
+import { loadFirebase, compressImage, renderMessages, fmtNu, fmtTime, MAX_TEXT } from './shared.js?v=20261111';
 
 const cfg = window.CHAT_CONFIG;
 const $ = (id) => document.getElementById(id);
