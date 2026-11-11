@@ -1,6 +1,7 @@
-// SOMA Cross: help the chicken cross 10 roads. Each road shows a prize (×0.5 to ×10). After every safe
-// hop a barrier protects the chicken and the player can cash out that road's prize, or hop on. A car
-// can hit the chicken on any hop. Uses the shared SOMA account and Nu balance (window.LuckySpin).
+// SOMA Cross: help the chicken cross 10 roads. Each road has a fixed prize: ×0.5 on road 1, ×1 on road 2,
+// and so on up to ×5 on road 10. Every road is riskier than the one before. After a safe hop a barrier
+// protects the chicken; from road 5 the player can cash out, or hop on for a bigger prize. A car can hit
+// the chicken on any hop. Uses the shared SOMA account and Nu balance (window.LuckySpin).
 (() => {
   'use strict';
   const game = window.LuckySpin;
@@ -9,18 +10,14 @@
   // ---------- settings ----------
   const BETS = [20, 50, 100, 500];
   const ROADS = 10;
-  // Prizes on the roads: random each round. Early roads are mostly small; ×5 from road 4, ×10 from road 8.
-  const TIERS = [
-    { upTo: 3, w: { 0.5: 20, 1: 30, 2: 35, 3: 15 } },
-    { upTo: 7, w: { 0.5: 15, 1: 20, 2: 30, 3: 20, 5: 15 } },
-    { upTo: 10, w: { 1: 15, 2: 25, 3: 25, 5: 20, 10: 15 } },
-  ];
-  // Odds: the chance of still being safe on road i is RTP × FADE^(i-1) ÷ (highest prize reached so far,
-  // at least 1). So bigger prizes sit on busier roads, and every hop is random. Simulated over a million
-  // rounds per strategy: whatever a player does (even knowing every prize in advance) they get back at
-  // most about 87% of their bets over time. Cashing out on the first ×2 wins about 38% of rounds.
-  const RTP = 0.88;
-  const FADE = 0.97;
+  const CASH_FROM = 5; // cash out unlocks on road 5
+  const PRIZES = Array.from({ length: ROADS }, (_, i) => (i + 1) / 2); // ×0.5, ×1, ×1.5 … ×5
+  // Chance of crossing each road safely: 85% on road 1, then 2% less on every road (67% on road 10).
+  // Chance of reaching road 5 is about 35% (pays ×2.5 = about 88% back over time); going further pays
+  // more but the odds drop faster, so every strategy gets back at most about 88% of the bets over time.
+  const FIRST_SAFE = 0.852;
+  const SAFE_STEP = 0.02;
+  const HOP_SAFE = PRIZES.map((_, i) => FIRST_SAFE - SAFE_STEP * i);
 
   const $ = (id) => document.getElementById(id);
   const fmtNu = (n) => 'Nu ' + Math.floor(n).toLocaleString('en-US');
@@ -32,36 +29,32 @@
     crypto.getRandomValues(a);
     return a[0] / 4294967296;
   }
-  function pickWeighted(w) {
-    const e = Object.entries(w);
-    const total = e.reduce((s, [, v]) => s + v, 0);
-    let r = rand() * total;
-    for (const [k, v] of e) { r -= v; if (r < 0) return Number(k); }
-    return Number(e[0][0]);
-  }
-  function newRoads() {
-    const m = [];
-    for (let i = 1; i <= ROADS; i++) m.push(pickWeighted(TIERS.find((t) => i <= t.upTo).w));
-    const safe = []; // chance to still be safe on each road
-    let top = 1;
-    for (let i = 0; i < ROADS; i++) { top = Math.max(top, m[i]); safe.push(RTP * FADE ** i / top); }
-    return { m, safe };
-  }
 
   // Prize table and the shared Note
   window.SOMA_PRIZES = window.SOMA_PRIZES || [];
-  window.SOMA_PRIZES.push({ id: 'cross', title: '🐔 SOMA Cross', prizes: (b) => [2, 3, 5, 10].map((x) => Math.floor(b * x)) });
+  window.SOMA_PRIZES.push({
+    id: 'cross',
+    title: '🐔 SOMA Cross',
+    help: [
+      'Pick your bet and press GO to hop to the next road.',
+      'Every road pays more: ×0.5, ×1, ×1.5 … up to ×5 on road 10.',
+      'Every road is also busier, so the risk grows.',
+      'Cash out from road 5, before a car gets you!',
+      'Prizes below: road 5, 8 and 10.',
+    ],
+    prizes: (b) => [5, 8, 10].map((r) => Math.floor(b * PRIZES[r - 1])),
+  });
   (function buildPrizes() {
-    const kinds = [10, 5, 3, 2, 1, 0.5];
+    const roadsShown = [5, 6, 7, 8, 9, 10];
     const tr = document.createElement('tr');
-    for (const t of ['Bet', ...kinds.map(label)]) { const th = document.createElement('th'); th.textContent = t; if (t === '×10') th.className = 'jp'; tr.append(th); }
+    for (const t of ['Road', ...BETS.map((b) => 'Nu ' + b)]) { const th = document.createElement('th'); th.textContent = t; tr.append(th); }
     $('crossPayHead').append(tr);
-    for (const b of BETS) {
+    for (const r of roadsShown) {
       const row = document.createElement('tr');
       const first = document.createElement('td');
-      first.textContent = 'Nu ' + b;
+      first.textContent = `${r} · ${label(PRIZES[r - 1])}`;
       row.append(first);
-      for (const k of kinds) { const td = document.createElement('td'); td.textContent = Math.floor(b * k).toLocaleString('en-US'); if (k === 10) td.className = 'jp'; row.append(td); }
+      for (const b of BETS) { const td = document.createElement('td'); td.textContent = Math.floor(b * PRIZES[r - 1]).toLocaleString('en-US'); if (r === ROADS) td.className = 'jp'; row.append(td); }
       $('crossPayBody').append(row);
     }
   })();
@@ -78,9 +71,9 @@
       game.sound.beep(220, 0, 0.1, 0.08, 'square');
       game.sound.beep(440, 0.02, 0.08, 0.04, 'triangle');
     },
-    reveal(m) { // prize revealed: brighter for bigger prizes
-      if (m >= 10) { game.sound.chime([523, 659, 784, 1047, 1319, 1568]); return; }
-      if (m >= 5) { game.sound.chime([523, 659, 784, 1047, 1319]); return; }
+    reveal(m) { // safe landing: brighter for bigger prizes
+      if (m >= 5) { game.sound.chime([523, 659, 784, 1047, 1319, 1568]); return; }
+      if (m >= 4) { game.sound.chime([523, 659, 784, 1047, 1319]); return; }
       if (m >= 3) { game.sound.chime([659, 880, 1175]); return; }
       if (m >= 2) { game.sound.chime([587, 880]); return; }
       if (m >= 1) { game.sound.beep(523, 0.05, 0.2, 0.08); return; }
@@ -110,8 +103,7 @@
   };
 
   // ---------- round state ----------
-  let round = null; // { bet, m, safe, at (road index, -1 = start), bonusDue, over }
-  let roads = newRoads(); // shown before a round starts
+  let round = null; // { bet, at (road index, -1 = start), bonusDue, over }
   const msgEl = $('crossMessage');
   const say = (text, cls = '') => { msgEl.textContent = text; msgEl.className = 'message' + (cls ? ' ' + cls : ''); };
 
@@ -120,9 +112,11 @@
     const busy = anim.busy;
     $('crossGo').disabled = busy || (playing && round.at >= ROADS - 1);
     $('crossGo').textContent = playing ? 'GO ▶' : `GO · ${fmtNu(bet)}`;
-    const canCash = playing && round.at >= 0 && !busy;
+    const canCash = playing && round.at >= CASH_FROM - 1 && !busy;
     $('crossCash').disabled = !canCash;
-    $('crossCash').textContent = canCash ? `CASH OUT ${fmtNu(Math.floor(round.bet * round.m[round.at]))}` : 'CASH OUT';
+    $('crossCash').textContent = canCash ? `CASH OUT ${fmtNu(Math.floor(round.bet * PRIZES[round.at]))}`
+      : playing ? `CASH OUT from road ${CASH_FROM}` : 'CASH OUT';
+    $('crossCash').classList.toggle('pulse', canCash);
     document.querySelectorAll('#crossBets button').forEach((b) => { b.disabled = !!playing; });
   }
 
@@ -144,20 +138,19 @@
         say(game.nu < BETS[0] ? 'You are out of Nu. Open ☰ Menu → Contact us / Recharge Nu to top up.' : `Not enough Nu for a ${fmtNu(bet)} bet. Pick a smaller one.`, 'lose');
         return;
       }
-      round = { bet, m: roads.m, safe: roads.safe, at: -1, bonusDue: paid.bonusDue, over: false };
+      round = { bet, at: -1, bonusDue: paid.bonusDue, over: false };
       game.sound.start();
     }
     if (round.at >= ROADS - 1) return;
     const next = round.at + 1;
-    const prevSafe = round.at < 0 ? 1 : round.safe[round.at];
-    const hit = rand() >= round.safe[next] / prevSafe; // decided now, at random
+    const hit = rand() >= HOP_SAFE[next]; // decided now, at random; each road is riskier than the last
     hop(next, hit);
   }
   $('crossGo').addEventListener('click', go);
 
   function cashOut(auto) {
-    if (!round || round.over || round.at < 0 || anim.busy) return;
-    const m = round.m[round.at];
+    if (!round || round.over || round.at < CASH_FROM - 1 || anim.busy) return;
+    const m = PRIZES[round.at];
     const payout = Math.floor(round.bet * m);
     round.over = true;
     game.settle({ payout, net: payout - round.bet, label: `Cross ${label(m)} (road ${round.at + 1})`, bonusDue: round.bonusDue });
@@ -166,8 +159,8 @@
     if (round.bonusDue) text += ` +${fmtNu(game.bonusNu)} bonus for ${game.bonusEvery} plays!`;
     say(text, payout > round.bet ? (m >= 5 ? 'jackpot' : 'win') : '');
     if (!auto) {
-      sfx.coins(payout > round.bet ? Math.min(12, 4 + Math.round(m * 1.5)) : 3);
-      if (m >= 5 || payout > round.bet) game.celebrate(m >= 10 ? 'jackpot' : m >= 5 ? 'big' : 'win');
+      sfx.coins(Math.min(12, 4 + Math.round(m * 1.5)));
+      game.celebrate(m >= 5 ? 'jackpot' : m >= 4 ? 'big' : 'win');
     }
     endRound();
   }
@@ -177,7 +170,7 @@
 
   function endRound() {
     setTimeout(() => {
-      roads = newRoads();
+      held.clear();
       chicken.road = -1; chicken.x = colX(-1); chicken.dead = false; chicken.alpha = 1;
       barriers.clear();
       cars = cars.filter((c) => !c.killer);
@@ -209,6 +202,7 @@
 
   const chicken = { road: -1, x: colX(-1), y: CY, dead: false, alpha: 1 };
   const barriers = new Set();
+  const held = new Set(); // road the chicken is hopping to safely: traffic stops before it lands
   let cars = []; // { lane, y, speed, color, killer, t0 }
   let feathers = [];
   const anim = { busy: false };
@@ -227,8 +221,11 @@
     sfx.cluck();
     chicken.hopFrom = from; chicken.hopTo = to; chicken.hopT0 = t0; chicken.hopping = true;
     if (!hit) {
-      // clear the way on the road the chicken lands on safely
-      cars = cars.filter((c) => !(c.lane === next && c.y + CAR_H > BARRIER_Y - 10 && c.y < CY + 40));
+      // Safe hop: stop the traffic on that road right away (not only when the chicken lands), and clear
+      // any car already past the stop line, so even a slow car can't drive into the chicken.
+      held.add(next);
+      const stop = BARRIER_Y - CAR_H - 6;
+      cars = cars.filter((c) => !(c.lane === next && c.y > stop && c.y < CY + 40));
     } else {
       // a car comes all of a sudden down that road
       cars = cars.filter((c) => c.lane !== next || c.y > CY + 40);
@@ -242,10 +239,11 @@
       round.at = next;
       if (!hit) {
         barriers.add(next);
+        held.delete(next);
         chicken.landT = performance.now();
         sfx.clank();
-        sfx.reveal(round.m[next]);
-        const m = round.m[next];
+        const m = PRIZES[next];
+        sfx.reveal(m);
         const val = Math.floor(round.bet * m);
         if (next >= ROADS - 1) {
           anim.busy = false;
@@ -253,7 +251,12 @@
           cashOut(false);
           return;
         }
-        say(`Safe on road ${next + 1}: ${label(m)} = ${fmtNu(val)}. Cash out or GO!`, m * round.bet > round.bet ? 'win' : '');
+        if (next < CASH_FROM - 1) {
+          const left = CASH_FROM - 1 - next;
+          say(`Safe on road ${next + 1}: ${label(m)}. ${left} more road${left === 1 ? '' : 's'} to unlock CASH OUT. GO!`);
+        } else {
+          say(`Safe on road ${next + 1}: ${label(m)} = ${fmtNu(val)}. Cash out or GO!`, val > round.bet ? 'win' : '');
+        }
         anim.busy = false;
         updateButtons();
       }
@@ -391,23 +394,12 @@
     ctx.restore();
   }
 
-  function drawMarker(i, m, state, hidden) {
-    // the road's prize, painted on the road where the chicken lands; a gold "?" until the chicken lands safely
+  function drawMarker(i, m, state) {
+    // the road's prize, painted on the road where the chicken lands (roads before CASH OUT unlocks are dark)
     const x = colX(i);
     const r = 22;
     ctx.save();
-    if (hidden) {
-      const hg = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
-      hg.addColorStop(0, '#2a2d36'); hg.addColorStop(1, '#0c0d11');
-      ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = hg; ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(232,196,106,.85)'; ctx.stroke();
-      ctx.fillStyle = '#f4d27c'; ctx.font = '900 17px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('?', x, CY + 7);
-      ctx.restore();
-      return;
-    }
-    const col = m >= 10 ? ['#fbe7a8', '#8a6414'] : m >= 5 ? ['#c0263f', '#5e0f1c'] : m >= 2 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
+    const col = m >= 5 ? ['#fbe7a8', '#8a6414'] : m >= 4 ? ['#c0263f', '#5e0f1c'] : i >= CASH_FROM - 1 ? ['#0f6b44', '#06301f'] : ['#2a2d36', '#0c0d11'];
     ctx.globalAlpha = state === 'passed' ? 0.4 : 1;
     if (state === 'current') { ctx.shadowColor = '#f4d27c'; ctx.shadowBlur = 18; }
     const g = ctx.createRadialGradient(x - 6, CY - 6, 3, x, CY, r);
@@ -415,7 +407,7 @@
     ctx.beginPath(); ctx.ellipse(x, CY + 6, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
     ctx.shadowBlur = 0;
     ctx.lineWidth = 2; ctx.strokeStyle = state === 'current' ? '#fff3c4' : 'rgba(232,196,106,.85)'; ctx.stroke();
-    ctx.fillStyle = m >= 10 ? '#2a1d00' : m >= 2 ? '#f4d27c' : '#a3a7b0';
+    ctx.fillStyle = m >= 5 ? '#2a1d00' : i >= CASH_FROM - 1 ? '#f4d27c' : '#a3a7b0';
     ctx.font = '900 15px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(label(m), x, CY + 7);
@@ -472,10 +464,9 @@
     ctx.fillStyle = '#f4d27c'; ctx.font = '900 14px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('★ FINISH ★', 0, 0); ctx.restore();
 
     // prize markers on every road, at the chicken's height
-    const ms = round && (!round.over || chicken.road >= 0) ? round.m : roads.m;
     for (let i = 0; i < ROADS; i++) {
       const state = chicken.road === i && !chicken.dead ? 'current' : (round && !round.over && i < chicken.road) ? 'passed' : '';
-      drawMarker(i, ms[i], state, !barriers.has(i)); // revealed only where the chicken landed safely
+      drawMarker(i, PRIZES[i], state);
     }
     for (const i of barriers) drawBarrier(i);
     for (const c of cars) drawCar(c);
@@ -497,8 +488,8 @@
     if (!chicken.dead || now - chicken.deadT < 1200) drawChicken(cx, cy, squash, chicken.dead, now);
     // the prize the chicken is standing on, shown just below it
     if (round && !chicken.dead && !chicken.hopping && chicken.road >= 0) {
-      const m = round.m[chicken.road];
-      const text = `${label(m)} = ${fmtNu(Math.floor(round.bet * m))}`;
+      const m = PRIZES[chicken.road];
+      const text = chicken.road < CASH_FROM - 1 ? `${label(m)} · 🔒 road ${CASH_FROM}` : `${label(m)} = ${fmtNu(Math.floor(round.bet * m))}`;
       ctx.font = '900 13px system-ui, -apple-system, sans-serif';
       const tw = ctx.measureText(text).width + 18;
       const lx = Math.max(SIDE + 4, Math.min(WORLD_W - SIDE - tw - 4, chicken.x - tw / 2));
@@ -530,7 +521,7 @@
     if (now - lastSpawn > 380 + rand() * 650) {
       lastSpawn = now;
       const free = [];
-      for (let i = 0; i < ROADS; i++) if (!barriers.has(i) && chicken.road !== i) free.push(i);
+      for (let i = 0; i < ROADS; i++) if (!barriers.has(i) && !held.has(i) && chicken.road !== i) free.push(i);
       if (free.length) {
         const lane = free[Math.floor(rand() * free.length)];
         if (!cars.some((c) => c.lane === lane && c.y < 40)) {
@@ -542,7 +533,7 @@
       if (c.killer) { if (now >= c.t0) c.y = -CAR_H - 10 + (now - c.t0) * 0.95; continue; } // races down through the chicken
       const stop = BARRIER_Y - CAR_H - 6; // cars stop at a barrier (if they have not passed it yet)
       const before = c.y;
-      if (barriers.has(c.lane) && c.y <= stop) c.y = Math.min(stop, c.y + c.speed);
+      if ((barriers.has(c.lane) || held.has(c.lane)) && c.y <= stop) c.y = Math.min(stop, c.y + c.speed);
       else c.y += c.speed;
       // whoosh when a car rushes past right next to the chicken (not too often)
       if (before + CAR_H < CY && c.y + CAR_H >= CY && Math.abs(c.lane - chicken.road) <= 1 && now - lastWhoosh > 350) {
